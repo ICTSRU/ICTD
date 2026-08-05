@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IT Risk Register – Sulaiman Al Rajhi University</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
+  header{background:linear-gradient(135deg,#1a3c6e,#2563eb);color:#fff;padding:18px 32px;display:flex;align-items:center;gap:16px}
+  header .logo{width:48px;height:48px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1a3c6e;font-size:18px;flex-shrink:0}
+  header h1{font-size:1.3rem;font-weight:700}
+  header p{font-size:.8rem;opacity:.85;margin-top:2px}
+  .container{max-width:1300px;margin:0 auto;padding:24px 20px}
+  .card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:24px;overflow:hidden}
+  .card-header{background:#1a3c6e;color:#fff;padding:14px 20px;font-weight:600;font-size:.95rem;display:flex;align-items:center;gap:8px}
+  .card-body{padding:20px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .form-group{display:flex;flex-direction:column;gap:6px}
+  .form-group.full{grid-column:1/-1}
+  label{font-size:.82rem;font-weight:600;color:#374151}
+  input,select,textarea{border:1.5px solid #d1d5db;border-radius:7px;padding:9px 12px;font-size:.88rem;transition:border .2s;font-family:inherit;width:100%}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+  textarea{resize:vertical;min-height:72px}
+  .score-display{background:#f8fafc;border:2px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center;margin-top:8px}
+  .score-display .score-val{font-size:2rem;font-weight:800}
+  .score-display .score-label{font-size:.78rem;color:#6b7280;margin-top:2px}
+  .btn{padding:10px 20px;border:none;border-radius:7px;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary{background:#2563eb;color:#fff}
+  .btn-primary:hover{background:#1d4ed8}
+  .btn-success{background:#16a34a;color:#fff}
+  .btn-success:hover{background:#15803d}
+  .btn-warning{background:#d97706;color:#fff}
+  .btn-warning:hover{background:#b45309}
+  .btn-danger{background:#dc2626;color:#fff}
+  .btn-danger:hover{background:#b91c1c}
+  .btn-secondary{background:#6b7280;color:#fff}
+  .btn-secondary:hover{background:#4b5563}
+  .btn-sm{padding:5px 10px;font-size:.78rem}
+  .actions-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+  .actions-bar .spacer{flex:1}
+  .filter-input{border:1.5px solid #d1d5db;border-radius:7px;padding:8px 12px;font-size:.85rem;width:220px}
+  .filter-input:focus{outline:none;border-color:#2563eb}
+  table{width:100%;border-collapse:collapse;font-size:.83rem}
+  thead tr{background:#1a3c6e;color:#fff}
+  thead th{padding:11px 10px;text-align:left;font-weight:600;white-space:nowrap}
+  tbody tr{border-bottom:1px solid #e5e7eb;transition:background .15s}
+  tbody tr:hover{background:#f0f9ff}
+  tbody td{padding:10px;vertical-align:top}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap}
+  .badge-low{background:#dcfce7;color:#166534}
+  .badge-medium{background:#fef9c3;color:#854d0e}
+  .badge-high{background:#fed7aa;color:#9a3412}
+  .badge-critical{background:#fee2e2;color:#991b1b}
+  .empty-state{text-align:center;padding:48px 20px;color:#9ca3af}
+  .empty-state svg{width:56px;height:56px;margin:0 auto 12px;display:block;opacity:.4}
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+  .stat-card{background:#fff;border-radius:10px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);border-top:4px solid}
+  .stat-card.total{border-color:#2563eb}
+  .stat-card.low{border-color:#16a34a}
+  .stat-card.high{border-color:#d97706}
+  .stat-card.critical{border-color:#dc2626}
+  .stat-val{font-size:1.8rem;font-weight:800;line-height:1}
+  .stat-lbl{font-size:.75rem;color:#6b7280;margin-top:4px}
+  @media print{
+    header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .no-print{display:none!important}
+    .card{box-shadow:none;border:1px solid #e5e7eb}
+    body{background:#fff}
+    .stats-row .stat-card{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+  @media(max-width:700px){
+    .form-grid{grid-template-columns:1fr}
+    .stats-row{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SR</div>
+  <div>
+    <h1>IT Department – Risk Register</h1>
+    <p>Sulaiman Al Rajhi University &nbsp;|&nbsp; Digital Transformation & IT Operations</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card total"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl">Total Risks</div></div>
+    <div class="stat-card low"><div class="stat-val" id="statLow">0</div><div class="stat-lbl">Low / Medium</div></div>
+    <div class="stat-card high"><div class="stat-val" id="statHigh">0</div><div class="stat-lbl">High Risks</div></div>
+    <div class="stat-card critical"><div class="stat-val" id="statCritical">0</div><div class="stat-lbl">Critical Risks</div></div>
+  </div>
+
+  <!-- Form -->
+  <div class="card no-print">
+    <div class="card-header">➕ Register New Risk</div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Risk Title *</label>
+          <input type="text" id="fTitle" placeholder="e.g. Ransomware Attack on File Servers"/>
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="fCategory">
+            <option value="">-- Select Category --</option>
+            <option>Security</option>
+            <option>Infrastructure</option>
+            <option>Data</option>
+            <option>Compliance</option>
+            <option>Operations</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Description</label>
+          <textarea id="fDesc" placeholder="Describe the risk in detail..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Likelihood (1 = Rare, 5 = Almost Certain)</label>
+          <select id="fLikelihood" onchange="calcScore()">
+            <option value="">-- Select --</option>
+            <option value="1">1 – Rare</option>
+            <option value="2">2 – Unlikely</option>
+            <option value="3">3 – Possible</option>
+            <option value="4">4 – Likely</option>
+            <option value="5">5 – Almost Certain</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Impact (1 = Negligible, 5 = Catastrophic)</label>
+          <select id="fImpact" onchange="calcScore()">
+            <option value="">-- Select --</option>
+            <option value="1">1 – Negligible</option>
+            <option value="2">2 – Minor</option>
+            <option value="3">3 – Moderate</option>
+            <option value="4">4 – Major</option>
+            <option value="5">5 – Catastrophic</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Risk Owner *</label>
+          <input type="text" id="fOwner" placeholder="e.g. Network Security Team"/>
+        </div>
+        <div class="form-group">
+          <div class="score-display">
+            <div class="score-val" id="scoreVal" style="color:#6b7280">—</div>
+            <div class="score-label" id="scoreLabel">Risk Score (L × I)</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Risk Response</label>
+          <select id="fResponse" onchange="updatePlanLabel()">
+            <option value="">-- Select Response --</option>
+            <option>Mitigate</option>
+            <option>Accept</option>
+            <option>Transfer</option>
+            <option>Avoid</option>
+          </select>
+        </div>
+
+        <div class="form-group full">
+          <label id="planLabel">Mitigation Plan</label>
+          <textarea id="fMitigation" placeholder="Describe the mitigation or treatment plan..."></textarea>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="addRisk()">➕ Add Risk</button>
+        <button class="btn btn-secondary" onclick="clearForm()">✕ Clear</button>
+      </div>
+      <div id="formError" style="color:#dc2626;font-size:.83rem;margin-top:8px;display:none"></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-header">📋 Risk Register Table</div>
+    <div class="card-body">
+      <div class="actions-bar no-print">
+        <input class="filter-input" id="searchInput" placeholder="🔍 Search risks..." oninput="renderTable()"/>
+        <select class="filter-input" id="filterCat" onchange="renderTable()" style="width:160px">
+          <option value="">All Categories</option>
+          <option>Security</option>
+          <option>Infrastructure</option>
+          <option>Data</option>
+          <option>Compliance</option>
+          <option>Operations</option>
+          <option>Other</option>
+        </select>
+        <select class="filter-input" id="filterSev" onchange="renderTable()" style="width:150px">
+          <option value="">All Severities</option>
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+          <option>Critical</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="btn btn-success" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn btn-warning" onclick="window.print()">🖨 Print Report</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Likelihood</th>
+              <th>Impact</th>
+              <th>Score</th>
+              <th>Severity</th>
+              <th>Owner</th>
+              <th>Risk Response</th>
+              <th>Mitigation Plan</th>
+              <th class="no-print">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="riskTableBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="empty-state" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75a2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
+        No risks registered yet. Use the form above to add your first risk.
+      </div>
+      <div style="margin-top:12px;font-size:.78rem;color:#9ca3af" id="rowCount"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let risks = JSON.parse(localStorage.getItem('sriskregister') || '[]');
+let editId = null;
+
+const scoreInfo = s => {
+  if(!s) return {label:'—',cls:'',color:'#6b7280'};
+  if(s<=4) return {label:'Low',cls:'badge-low',color:'#16a34a'};
+  if(s<=9) return {label:'Medium',cls:'badge-medium',color:'#ca8a04'};
+  if(s<=16) return {label:'High',cls:'badge-high',color:'#ea580c'};
+  return {label:'Critical',cls:'badge-critical',color:'#dc2626'};
+};
+
+function calcScore(){
+  const l = +document.getElementById('fLikelihood').value;
+  const i = +document.getElementById('fImpact').value;
+  const el = document.getElementById('scoreVal');
+  const lbl = document.getElementById('scoreLabel');
+  if(l && i){
+    const s = l*i;
+    const info = scoreInfo(s);
+    el.textContent = s;
+    el.style.color = info.color;
+    lbl.textContent = `Risk Score – ${info.label}`;
+  } else {
+    el.textContent = '—';
+    el.style.color = '#6b7280';
+    lbl.textContent = 'Risk Score (L × I)';
+  }
+}
+
+function updatePlanLabel(){
+  const response = document.getElementById('fResponse').value;
+  const planLabel = document.getElementById('planLabel');
+  const mitigationBox = document.getElementById('fMitigation');
+
+  if(response){
+    planLabel.textContent = `${response} Plan`;
+    mitigationBox.placeholder = `Describe the ${response.toLowerCase()} plan...`;
+  } else {
+    planLabel.textContent = 'Mitigation Plan';
+    mitigationBox.placeholder = 'Describe the mitigation or treatment plan...';
+  }
+}
+
+function clearForm(){
+  ['fTitle','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.value = '';
+  });
+  calcScore();
+  updatePlanLabel();
+  editId = null;
+  document.querySelector('.btn-primary').textContent = '➕ Add Risk';
+  document.getElementById('formError').style.display='none';
+}
+
+function addRisk(){
+  const title = document.getElementById('fTitle').value.trim();
+  const cat = document.getElementById('fCategory').value;
+  const desc = document.getElementById('fDesc').value.trim();
+  const lik = document.getElementById('fLikelihood').value;
+  const imp = document.getElementById('fImpact').value;
+  const owner = document.getElementById('fOwner').value.trim();
+  const response = document.getElementById('fResponse').value;
+  const mit = document.getElementById('fMitigation').value.trim();
+  const err = document.getElementById('formError');
+
+  if(!title||!cat||!lik||!imp||!owner){
+    err.textContent = '⚠ Please fill in all required fields (Title, Category, Likelihood, Impact, Owner).';
+    err.style.display='block';
+    return;
+  }
+  err.style.display='none';
+
+  const score = +lik * +imp;
+  const risk = {
+    id: editId || Date.now(),
+    title, cat, desc, lik:+lik, imp:+imp, score, owner, response, mit,
+    date: editId ? (risks.find(r=>r.id===editId)||{}).date : new Date().toLocaleDateString('en-GB')
+  };
+
+  if(editId){
+    risks = risks.map(r => r.id===editId ? risk : r);
+    editId = null;
+    document.querySelector('.btn-primary').textContent = '➕ Add Risk';
+  } else {
+    risks.push(risk);
+  }
+
+  localStorage.setItem('sriskregister', JSON.stringify(risks));
+  clearForm();
+  renderTable();
+  updateStats();
+}
+
+function deleteRisk(id){
+  if(!confirm('Delete this risk entry?')) return;
+  risks = risks.filter(r=>r.id!==id);
+  localStorage.setItem('sriskregister', JSON.stringify(risks));
+  renderTable();
+  updateStats();
+}
+
+function editRisk(id){
+  const r = risks.find(r=>r.id===id);
+  if(!r) return;
+  document.getElementById('fTitle').value = r.title;
+  document.getElementById('fCategory').value = r.cat;
+  document.getElementById('fDesc').value = r.desc;
+  document.getElementById('fLikelihood').value = r.lik;
+  document.getElementById('fImpact').value = r.imp;
+  document.getElementById('fOwner').value = r.owner;
+  document.getElementById('fResponse').value = r.response || '';
+  document.getElementById('fMitigation').value = r.mit;
+  calcScore();
+  updatePlanLabel();
+  editId = id;
+  document.querySelector('.btn-primary').textContent = '💾 Save Changes';
+  document.querySelector('.card.no-print').scrollIntoView({behavior:'smooth'});
+}
+
+function renderTable(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const fc = document.getElementById('filterCat').value;
+  const fs = document.getElementById('filterSev').value;
+  const tbody = document.getElementById('riskTableBody');
+  const empty = document.getElementById('emptyState');
+  const count = document.getElementById('rowCount');
+
+  let filtered = risks.filter(r => {
+    const matchQ = !q || r.title.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q) || r.owner.toLowerCase().includes(q);
+    const matchC = !fc || r.cat === fc;
+    const matchS = !fs || scoreInfo(r.score).label === fs;
+    return matchQ && matchC && matchS;
+  });
+
+  if(!filtered.length){
+    tbody.innerHTML = '';
+    empty.style.display='block';
+    count.textContent='';
+    return;
+  }
+  empty.style.display='none';
+  count.textContent = `Showing ${filtered.length} of ${risks.length} risk(s)`;
+
+  tbody.innerHTML = filtered.map((r,i) => {
+    const info = scoreInfo(r.score);
+    return `<tr>
+      <td>${i+1}</td>
+      <td><strong>${r.title}</strong><br><span style="font-size:.74rem;color:#9ca3af">${r.date}</span></td>
+      <td>${r.cat}</td>
+      <td style="max-width:200px;white-space:normal">${r.desc||'—'}</td>
+      <td style="text-align:center">${r.lik}</td>
+      <td style="text-align:center">${r.imp}</td>
+      <td style="text-align:center;font-weight:700;color:${info.color}">${r.score}</td>
+      <td><span class="badge ${info.cls}">${info.label}</span></td>
+      <td>${r.owner}</td>
+      <td>${r.response||'—'}</td>
+      <td style="max-width:200px;white-space:normal">${r.mit||'—'}</td>
+      <td class="no-print" style="white-space:nowrap">
+        <button class="btn btn-warning btn-sm" onclick="editRisk(${r.id})">✏ Edit</button>
+        <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteRisk(${r.id})">🗑 Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStats(){
+  const total = risks.length;
+  const low = risks.filter(r=>scoreInfo(r.score).label==='Low'||scoreInfo(r.score).label==='Medium').length;
+  const high = risks.filter(r=>scoreInfo(r.score).label==='High').length;
+  const crit = risks.filter(r=>scoreInfo(r.score).label==='Critical').length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statLow').textContent = low;
+  document.getElementById('statHigh').textContent = high;
+  document.getElementById('statCritical').textContent = crit;
+}
+
+function exportCSV(){
+  if(!risks.length){alert('No risks to export.');return;}
+  const headers = ['#','Title','Category','Description','Likelihood','Impact','Score','Severity','Owner','Risk Response','Mitigation Plan','Date'];
+  const rows = risks.map((r,i)=>[
+    i+1, `"${r.title}"`, r.cat, `"${r.desc}"`, r.lik, r.imp, r.score, scoreInfo(r.score).label, `"${r.owner}"`, `"${r.response||""}"`, `"${r.mit}"`, r.date
+  ]);
+  const csv = [headers, ...rows].map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `IT_Risk_Register_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+renderTable();
+updateStats();
+updatePlanLabel();
+</script>
+</body>
+</html>
