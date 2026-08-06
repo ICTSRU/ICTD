@@ -178,7 +178,7 @@
 
   <div class="setup-banner no-print" id="setupBanner">
     <span>🔗 الرجاء إدخال رابط Google Apps Script Web App لربط الصفحة بجدول البيانات:</span>
-    <input id="sheetUrlInput" placeholder="https://script.google.com/macros/s/AKfycbwFkdVA472LscqIZt6Wmd1VgJLeVDVdhKklXEGSp4Wrr_HbsN3-MnjE8DdHz6Yw5EwnDQ/exec">
+    <input id="sheetUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
     <button class="btn small" id="saveUrlBtn">حفظ الرابط</button>
   </div>
 
@@ -199,6 +199,8 @@
           <option value="Switch">سويتش شبكة (Network Switch)</option>
           <option value="UPS">UPS</option>
           <option value="Scanner">ماسح ضوئي (Scanner)</option>
+          <option value="Accessories">ملحقات (Accessories)</option>
+          <option value="ScreenVertical">شاشة طولية (Vertical Screen)</option>
           <option value="Other">أخرى</option>
         </select>
       </div>
@@ -217,6 +219,23 @@
       <div class="field">
         <label>الرقم التسلسلي</label>
         <input id="f_serial" placeholder="Serial Number">
+      </div>
+      <div class="field">
+        <label>الشركة الموردة</label>
+        <input id="f_supplier" list="supplierNamesList" placeholder="اسم الشركة الموردة" autocomplete="off">
+        <datalist id="supplierNamesList"></datalist>
+      </div>
+      <div class="field">
+        <label>اسم مسؤول التواصل</label>
+        <input id="f_supplier_contact_name" placeholder="اسم المسؤول لدى المورد">
+      </div>
+      <div class="field">
+        <label>البريد الإلكتروني</label>
+        <input id="f_supplier_email" type="email" placeholder="example@supplier.com">
+      </div>
+      <div class="field">
+        <label>رقم الهاتف</label>
+        <input id="f_supplier_phone" placeholder="05XXXXXXXX">
       </div>
       <div class="field" id="f_extra1_wrap" style="display:none">
         <label id="f_extra1_label">مواصفة إضافية</label>
@@ -246,6 +265,18 @@
       <div class="field">
         <label>تاريخ الشراء</label>
         <input id="f_date" type="date">
+      </div>
+      <div class="field">
+        <label>حالة الضمان <span class="req">*</span></label>
+        <select id="f_warranty">
+          <option value="Covered">ساري (Under Warranty)</option>
+          <option value="Expired">منتهي (Expired)</option>
+          <option value="None">بدون ضمان (Not Covered)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>تاريخ انتهاء الضمان</label>
+        <input id="f_warranty_expiry" type="date">
       </div>
       <div class="field wide">
         <label>ملاحظات</label>
@@ -281,6 +312,15 @@
           <option value="Retired">خارج الخدمة</option>
         </select>
       </div>
+      <div class="field">
+        <label>تصفية حسب الضمان</label>
+        <select id="filterWarranty">
+          <option value="">الكل</option>
+          <option value="Covered">ساري</option>
+          <option value="Expired">منتهي</option>
+          <option value="None">بدون ضمان</option>
+        </select>
+      </div>
       <button class="btn secondary small" id="refreshBtn" title="تحديث البيانات من الجدول">⟳ تحديث</button>
       <div class="export-menu">
         <button class="btn secondary" id="exportToggle">تصدير Excel ▾</button>
@@ -296,11 +336,13 @@
             <th>النوع</th>
             <th>رقم الأصل</th>
             <th>الشركة / الموديل</th>
+            <th>المورد</th>
             <th>المواصفات</th>
             <th>الموقع</th>
             <th>المستخدم</th>
             <th>الحالة</th>
             <th>تاريخ الشراء</th>
+            <th>الضمان</th>
             <th class="no-print">إجراءات</th>
           </tr>
         </thead>
@@ -317,11 +359,14 @@ const URL_KEY = 'sru_infra_sheet_url';
 
 const TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
-  Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Other:'أخرى'
+  Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية', Other:'أخرى'
 };
 const STATUS_LABELS = {
   Active:{ar:'نشط', cls:'active'}, Storage:{ar:'في المخزن', cls:'storage'},
   Repair:{ar:'تحت الصيانة', cls:'repair'}, Retired:{ar:'خارج الخدمة', cls:'retired'}
+};
+const WARRANTY_LABELS = {
+  Covered:{ar:'ساري', cls:'active'}, Expired:{ar:'منتهي', cls:'retired'}, None:{ar:'بدون ضمان', cls:'storage'}
 };
 const EXTRA_FIELDS = {
   PC:      [['ip','عنوان IP'], ['ram','الذاكرة RAM']],
@@ -331,10 +376,13 @@ const EXTRA_FIELDS = {
   Switch:  [['ip','عنوان IP'], ['ports','عدد المنافذ']],
   UPS:     [['capacity','السعة (VA)'], ['battery','حالة البطارية']],
   Scanner: [['conn','نوع الاتصال'], ['','']],
+  Accessories: [['itemType','نوع الملحق'], ['','']],
+  ScreenVertical: [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
   Other:   [['spec1','مواصفة 1'], ['spec2','مواصفة 2']]
 };
 
 let devices = [];
+let suppliers = [];
 let editingId = null;
 let sheetUrl = localStorage.getItem(URL_KEY) || '';
 
@@ -361,6 +409,8 @@ async function apiList(){
         devices.push(Object.assign({type:type}, rec));
       });
     });
+    suppliers = json.suppliers || [];
+    populateSupplierDatalist();
     setSync('ok','متصل - آخر تحديث: '+ new Date().toLocaleTimeString('ar-SA'));
   }catch(err){
     setSync('err','تعذر الاتصال بجوجل شيت: '+err.message);
@@ -393,6 +443,34 @@ async function apiWrite(action, record, idForDelete){
     return false;
   }
 }
+
+// ---- supplier autofill ----
+function populateSupplierDatalist(){
+  const dl = document.getElementById('supplierNamesList');
+  const seen = {};
+  dl.innerHTML = suppliers.filter(s=>{
+    const k = (s.name||'').trim().toLowerCase();
+    if(!k || seen[k]) return false;
+    seen[k]=true;
+    return true;
+  }).map(s=>`<option value="${escapeHtml(s.name)}"></option>`).join('');
+}
+function findSupplier(name){
+  const key = (name||'').trim().toLowerCase();
+  if(!key) return null;
+  return suppliers.find(s=> (s.name||'').trim().toLowerCase() === key) || null;
+}
+function autofillSupplier(){
+  const name = document.getElementById('f_supplier').value;
+  const match = findSupplier(name);
+  if(match){
+    document.getElementById('f_supplier_contact_name').value = match.contactName || '';
+    document.getElementById('f_supplier_email').value = match.email || '';
+    document.getElementById('f_supplier_phone').value = match.phone || '';
+  }
+}
+document.getElementById('f_supplier').addEventListener('input', autofillSupplier);
+document.getElementById('f_supplier').addEventListener('change', autofillSupplier);
 
 // ---- setup banner ----
 function refreshSetupBanner(){
@@ -438,10 +516,11 @@ function renderExtraFields(){
 }
 
 function clearForm(){
-  ['f_type','f_tag','f_brand','f_model','f_serial','f_extra1','f_extra2','f_location','f_user','f_date','f_notes'].forEach(id=>{
+  ['f_type','f_tag','f_brand','f_model','f_serial','f_supplier','f_supplier_contact_name','f_supplier_email','f_supplier_phone','f_extra1','f_extra2','f_location','f_user','f_date','f_notes','f_warranty_expiry'].forEach(id=>{
     document.getElementById(id).value='';
   });
   document.getElementById('f_status').value='Active';
+  document.getElementById('f_warranty').value='Covered';
   renderExtraFields();
   editingId = null;
   document.getElementById('saveBtn').textContent = 'حفظ الجهاز';
@@ -468,12 +547,18 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     brand: document.getElementById('f_brand').value.trim(),
     model: document.getElementById('f_model').value.trim(),
     serial: document.getElementById('f_serial').value.trim(),
+    supplier: document.getElementById('f_supplier').value.trim(),
+    supplierContactName: document.getElementById('f_supplier_contact_name').value.trim(),
+    supplierEmail: document.getElementById('f_supplier_email').value.trim(),
+    supplierPhone: document.getElementById('f_supplier_phone').value.trim(),
     specs,
     location,
     user: document.getElementById('f_user').value.trim(),
     status: document.getElementById('f_status').value,
     date: document.getElementById('f_date').value,
-    notes: document.getElementById('f_notes').value.trim()
+    notes: document.getElementById('f_notes').value.trim(),
+    warranty: document.getElementById('f_warranty').value,
+    warrantyExpiry: document.getElementById('f_warranty_expiry').value
   };
 
   const btn = document.getElementById('saveBtn');
@@ -495,6 +580,11 @@ function editDevice(id){
   document.getElementById('f_brand').value = d.brand;
   document.getElementById('f_model').value = d.model;
   document.getElementById('f_serial').value = d.serial;
+  document.getElementById('f_supplier').value = d.supplier || '';
+  const sup = findSupplier(d.supplier);
+  document.getElementById('f_supplier_contact_name').value = (sup && sup.contactName) || '';
+  document.getElementById('f_supplier_email').value = (sup && sup.email) || '';
+  document.getElementById('f_supplier_phone').value = (sup && sup.phone) || '';
   const extra1wrap = document.getElementById('f_extra1_wrap');
   const extra2wrap = document.getElementById('f_extra2_wrap');
   if(extra1wrap.dataset.key) document.getElementById('f_extra1').value = (d.specs && d.specs[extra1wrap.dataset.key]) || '';
@@ -504,6 +594,8 @@ function editDevice(id){
   document.getElementById('f_status').value = d.status;
   document.getElementById('f_date').value = d.date;
   document.getElementById('f_notes').value = d.notes;
+  document.getElementById('f_warranty').value = d.warranty || 'Covered';
+  document.getElementById('f_warranty_expiry').value = d.warrantyExpiry || '';
   editingId = id;
   document.getElementById('saveBtn').textContent = 'تحديث الجهاز';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -538,9 +630,11 @@ function getFiltered(){
   const q = document.getElementById('searchBox').value.trim().toLowerCase();
   const ft = document.getElementById('filterType').value;
   const fs = document.getElementById('filterStatus').value;
+  const fw = document.getElementById('filterWarranty').value;
   return devices.filter(d=>{
     if(ft && d.type!==ft) return false;
     if(fs && d.status!==fs) return false;
+    if(fw && d.warranty!==fw) return false;
     if(q){
       const hay = [d.tag,d.brand,d.model,d.serial,d.location,d.user,d.notes].join(' ').toLowerCase();
       if(!hay.includes(q)) return false;
@@ -561,15 +655,21 @@ function renderTable(){
   emptyMsg.style.display='none';
   tbody.innerHTML = list.map(d=>{
     const st = STATUS_LABELS[d.status] || {ar:d.status,cls:''};
+    const wr = WARRANTY_LABELS[d.warranty] || {ar:d.warranty||'-',cls:''};
     return `<tr>
       <td><span class="chip type">${TYPE_LABELS[d.type]||d.type}</span></td>
       <td><span class="sru-en">${escapeHtml(d.tag)}</span></td>
       <td>${escapeHtml(d.brand)} ${escapeHtml(d.model)}</td>
+      <td>${escapeHtml(d.supplier)||'-'}</td>
       <td>${escapeHtml(specsToText(d))}</td>
       <td>${escapeHtml(d.location)}</td>
       <td>${escapeHtml(d.user)||'-'}</td>
       <td><span class="chip ${st.cls}">${st.ar}</span></td>
       <td><span class="sru-en">${d.date||'-'}</span></td>
+      <td>
+        <span class="chip ${wr.cls}">${wr.ar}</span>
+        ${d.warrantyExpiry ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;"><span class="sru-en">${d.warrantyExpiry}</span></div>` : ''}
+      </td>
       <td class="no-print">
         <div class="row-actions">
           <button class="btn small secondary" onclick="editDevice('${d.id}')">تعديل</button>
@@ -591,10 +691,12 @@ function renderDash(){
   devices.forEach(d=>{ byType[d.type]=(byType[d.type]||0)+1; });
   const activeCount = devices.filter(d=>d.status==='Active').length;
   const repairCount = devices.filter(d=>d.status==='Repair').length;
+  const expiredWarranty = devices.filter(d=>d.warranty==='Expired').length;
 
   let html = `<div class="stat total"><div class="num">${total}</div><div class="lbl">إجمالي الأجهزة</div></div>`;
   html += `<div class="stat"><div class="num">${activeCount}</div><div class="lbl">أجهزة نشطة</div></div>`;
   html += `<div class="stat"><div class="num">${repairCount}</div><div class="lbl">تحت الصيانة</div></div>`;
+  html += `<div class="stat"><div class="num">${expiredWarranty}</div><div class="lbl">ضمان منتهي</div></div>`;
   const topTypes = Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,3);
   topTypes.forEach(([t,c])=>{
     html += `<div class="stat"><div class="num">${c}</div><div class="lbl">${TYPE_LABELS[t]||t}</div></div>`;
@@ -610,12 +712,17 @@ function renderAll(){
 
 // ---- export ----
 function buildSheetData(list){
-  const header = ['نوع الجهاز','رقم الأصل','الشركة المصنعة','الموديل','الرقم التسلسلي','المواصفات','الموقع/القسم','المستخدم المسؤول','الحالة','تاريخ الشراء','ملاحظات'];
-  const rows = list.map(d=>[
-    TYPE_LABELS[d.type]||d.type, d.tag, d.brand, d.model, d.serial,
-    specsToText(d), d.location, d.user,
-    (STATUS_LABELS[d.status]||{ar:d.status}).ar, d.date, d.notes
-  ]);
+  const header = ['نوع الجهاز','رقم الأصل','الشركة المصنعة','الموديل','الرقم التسلسلي','الشركة الموردة','اسم مسؤول التواصل','البريد الإلكتروني','رقم الهاتف','المواصفات','الموقع/القسم','المستخدم المسؤول','الحالة','تاريخ الشراء','حالة الضمان','تاريخ انتهاء الضمان','ملاحظات'];
+  const rows = list.map(d=>{
+    const sup = findSupplier(d.supplier) || {};
+    return [
+      TYPE_LABELS[d.type]||d.type, d.tag, d.brand, d.model, d.serial,
+      d.supplier, sup.contactName, sup.email, sup.phone,
+      specsToText(d), d.location, d.user,
+      (STATUS_LABELS[d.status]||{ar:d.status}).ar, d.date,
+      (WARRANTY_LABELS[d.warranty]||{ar:d.warranty||'-'}).ar, d.warrantyExpiry, d.notes
+    ];
+  });
   return [header, ...rows];
 }
 
@@ -666,7 +773,7 @@ document.addEventListener('click', ()=>{
 });
 document.getElementById('printBtn').addEventListener('click', ()=>window.print());
 
-['searchBox','filterType','filterStatus'].forEach(id=>{
+['searchBox','filterType','filterStatus','filterWarranty'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderTable);
   document.getElementById(id).addEventListener('change', renderTable);
 });
