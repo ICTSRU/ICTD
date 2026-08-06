@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>جرد البنية التحتية | ICTD - جامعة سليمان الراجحي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --purple:#501e8c;
+    --purple-dark:#3a1464;
+    --purple-light:#f0ebf8;
+    --blue:#0a6eaa;
+    --blue-light:#e6f3fa;
+    --bg:#f7f5fb;
+    --border:rgba(80,30,140,0.12);
+    --ink:#241436;
+    --muted:#6b5a80;
+    --radius:4px;
+    --green:#1a7f4b;
+    --amber:#b5750a;
+    --red:#b1272c;
+    --grey:#8a7d99;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Cairo',Tahoma,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    direction:rtl;
+  }
+  .topbar{
+    background:var(--purple-dark);
+    color:#fff;
+    padding:14px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:relative;
+    overflow:hidden;
+  }
+  .topbar::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(115deg, transparent 60%, rgba(10,110,170,0.35) 60%, rgba(10,110,170,0.35) 63%, transparent 63%);
+    pointer-events:none;
+  }
+  .topbar-title{display:flex;flex-direction:column;gap:2px;z-index:1;}
+  .topbar-title strong{font-size:17px;font-weight:800;letter-spacing:.3px;}
+  .topbar-title span{font-size:12px;color:#d9c9f2;font-weight:500;}
+  .navbar{
+    background:var(--purple);
+    color:#fff;
+    padding:0 28px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:14px;
+    font-weight:600;
+  }
+  .navbar .tabs{display:flex;gap:4px;}
+  .navbar div.tab{padding:12px 14px;opacity:.85;border-bottom:3px solid transparent;}
+  .navbar div.tab.active{opacity:1;border-bottom:3px solid #fff;}
+  .sync-status{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:#e9defc;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--grey);flex:none;}
+  .sync-dot.ok{background:#3ddc84;}
+  .sync-dot.err{background:#ff6b6b;}
+  .sync-dot.busy{background:#f5c542;animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+  .wrap{max-width:1200px;margin:0 auto;padding:24px 20px 60px;}
+  .dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px;}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden;}
+  .stat::before{content:'';position:absolute;right:0;top:0;bottom:0;width:4px;background:var(--blue);}
+  .stat.total::before{background:var(--purple);}
+  .stat .num{font-size:26px;font-weight:800;color:var(--purple-dark);}
+  .stat .lbl{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:2px;}
+
+  .panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+  .panel h2{font-size:16px;margin:0 0 16px;color:var(--purple-dark);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);padding-bottom:12px;}
+  .diag{display:inline-block;width:10px;height:10px;background:var(--blue);transform:rotate(45deg);flex:none;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:5px;}
+  .field input, .field select, .field textarea{
+    width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:var(--radius);
+    font-family:'Cairo',sans-serif;font-size:13.5px;color:var(--ink);background:#fff;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:none;border-color:var(--purple);box-shadow:0 0 0 3px var(--purple-light);
+  }
+  .field.wide{grid-column:1 / -1;}
+  .req{color:var(--red);}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius);
+    font-family:'Cairo',sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;
+    border:1px solid var(--purple);background:var(--purple);color:#fff;transition:background .15s;
+  }
+  .btn:hover{background:var(--purple-dark);}
+  .btn:disabled{opacity:.6;cursor:not-allowed;}
+  .btn.secondary{background:#fff;color:var(--purple);}
+  .btn.secondary:hover{background:var(--purple-light);}
+  .btn.small{padding:6px 10px;font-size:12.5px;}
+  .btn.danger{border-color:var(--red);background:#fff;color:var(--red);}
+  .btn.danger:hover{background:#fdeceb;}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:16px;}
+  .toolbar .field{min-width:160px;}
+  .toolbar .grow{flex:1;min-width:200px;}
+  .export-menu{position:relative;}
+  .export-dropdown{
+    display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid var(--border);
+    border-radius:var(--radius);box-shadow:0 8px 24px rgba(36,20,54,.15);min-width:220px;z-index:20;overflow:hidden;
+  }
+  .export-dropdown.open{display:block;}
+  .export-dropdown a{display:block;padding:10px 14px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--border);}
+  .export-dropdown a:last-child{border-bottom:none;}
+  .export-dropdown a:hover{background:var(--purple-light);color:var(--purple-dark);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{background:var(--purple-light);color:var(--purple-dark);text-align:right;padding:10px;font-weight:800;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--ink);}
+  tbody tr:hover{background:var(--blue-light);}
+  .chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;}
+  .chip.type{background:var(--blue-light);color:var(--blue);}
+  .chip.active{background:#e6f6ee;color:var(--green);}
+  .chip.repair{background:#fdf3e3;color:var(--amber);}
+  .chip.storage{background:#eee9f7;color:var(--purple);}
+  .chip.retired{background:#f5eef0;color:var(--red);}
+  .row-actions{display:flex;gap:6px;}
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);font-weight:600;font-size:13.5px;}
+  .table-scroll{overflow-x:auto;}
+  .sru-en{unicode-bidi:isolate;direction:ltr;display:inline-block;}
+
+  .setup-banner{
+    background:#fff8e6;border:1px solid #f0d888;color:#7a5b06;border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:20px;font-size:13.5px;font-weight:600;display:flex;
+    gap:12px;align-items:center;flex-wrap:wrap;
+  }
+  .setup-banner input{
+    flex:1;min-width:260px;padding:8px 10px;border:1px solid #e0c469;border-radius:var(--radius);font-family:'Cairo',sans-serif;
+  }
+
+  @media print{
+    .no-print{display:none !important;}
+    body{background:#fff;}
+    .panel{border:none;box-shadow:none;padding:0;}
+    .wrap{padding:0 10px;}
+    table{font-size:11px;}
+    thead th{background:#eee !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <strong>جرد أصول البنية التحتية</strong>
+    <span>الإدارة التنفيذية للاتصالات وتقنية المعلومات - جامعة سليمان الراجحي</span>
+  </div>
+  <div class="topbar-title" style="text-align:left">
+    <span class="sru-en">ICTD Infrastructure Inventory</span>
+  </div>
+</div>
+<div class="navbar no-print">
+  <div class="tabs"><div class="tab active">لوحة الجرد</div></div>
+  <div class="sync-status">
+    <span class="sync-dot" id="syncDot"></span>
+    <span id="syncText">غير متصل بجوجل شيت</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="setup-banner no-print" id="setupBanner">
+    <span>🔗 الرجاء إدخال رابط Google Apps Script Web App لربط الصفحة بجدول البيانات:</span>
+    <input id="sheetUrlInput" placeholder="https://script.google.com/macros/s/AKfycbwFkdVA472LscqIZt6Wmd1VgJLeVDVdhKklXEGSp4Wrr_HbsN3-MnjE8DdHz6Yw5EwnDQ/exec">
+    <button class="btn small" id="saveUrlBtn">حفظ الرابط</button>
+  </div>
+
+  <div class="dash" id="dashStats"></div>
+
+  <!-- FORM PANEL -->
+  <div class="panel no-print">
+    <h2><span class="diag"></span> إضافة / تعديل جهاز</h2>
+    <div class="grid" id="formGrid">
+      <div class="field">
+        <label>نوع الجهاز <span class="req">*</span></label>
+        <select id="f_type">
+          <option value="">اختر النوع</option>
+          <option value="PC">حاسب مكتبي (PC)</option>
+          <option value="Laptop">حاسب محمول (Laptop)</option>
+          <option value="Screen">شاشة (Screen)</option>
+          <option value="Printer">طابعة (Printer)</option>
+          <option value="Switch">سويتش شبكة (Network Switch)</option>
+          <option value="UPS">UPS</option>
+          <option value="Scanner">ماسح ضوئي (Scanner)</option>
+          <option value="Other">أخرى</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>رقم الأصل / الملصق <span class="req">*</span></label>
+        <input id="f_tag" placeholder="مثال: SRU-PC-0231">
+      </div>
+      <div class="field">
+        <label>الشركة المصنعة</label>
+        <input id="f_brand" placeholder="مثال: Dell, HP, Lenovo">
+      </div>
+      <div class="field">
+        <label>الموديل</label>
+        <input id="f_model" placeholder="رقم/اسم الموديل">
+      </div>
+      <div class="field">
+        <label>الرقم التسلسلي</label>
+        <input id="f_serial" placeholder="Serial Number">
+      </div>
+      <div class="field" id="f_extra1_wrap" style="display:none">
+        <label id="f_extra1_label">مواصفة إضافية</label>
+        <input id="f_extra1">
+      </div>
+      <div class="field" id="f_extra2_wrap" style="display:none">
+        <label id="f_extra2_label">مواصفة إضافية</label>
+        <input id="f_extra2">
+      </div>
+      <div class="field">
+        <label>الموقع / القسم <span class="req">*</span></label>
+        <input id="f_location" placeholder="مثال: مبنى الإدارة - الطابق 2">
+      </div>
+      <div class="field">
+        <label>المستخدم المسؤول</label>
+        <input id="f_user" placeholder="اسم الموظف (إن وجد)">
+      </div>
+      <div class="field">
+        <label>الحالة <span class="req">*</span></label>
+        <select id="f_status">
+          <option value="Active">نشط (Active)</option>
+          <option value="Storage">في المخزن (In Storage)</option>
+          <option value="Repair">تحت الصيانة (Under Repair)</option>
+          <option value="Retired">خارج الخدمة (Retired)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>تاريخ الشراء</label>
+        <input id="f_date" type="date">
+      </div>
+      <div class="field wide">
+        <label>ملاحظات</label>
+        <textarea id="f_notes" rows="2" placeholder="أي تفاصيل إضافية..."></textarea>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;">
+      <button class="btn" id="saveBtn">حفظ الجهاز</button>
+      <button class="btn secondary" id="clearBtn">مسح الحقول</button>
+    </div>
+  </div>
+
+  <!-- TABLE PANEL -->
+  <div class="panel">
+    <h2><span class="diag"></span> سجل الأجهزة</h2>
+
+    <div class="toolbar no-print">
+      <div class="field grow">
+        <label>بحث</label>
+        <input id="searchBox" placeholder="ابحث برقم الأصل، الموديل، الموقع، المستخدم...">
+      </div>
+      <div class="field">
+        <label>تصفية حسب النوع</label>
+        <select id="filterType"><option value="">الكل</option></select>
+      </div>
+      <div class="field">
+        <label>تصفية حسب الحالة</label>
+        <select id="filterStatus">
+          <option value="">الكل</option>
+          <option value="Active">نشط</option>
+          <option value="Storage">في المخزن</option>
+          <option value="Repair">تحت الصيانة</option>
+          <option value="Retired">خارج الخدمة</option>
+        </select>
+      </div>
+      <button class="btn secondary small" id="refreshBtn" title="تحديث البيانات من الجدول">⟳ تحديث</button>
+      <div class="export-menu">
+        <button class="btn secondary" id="exportToggle">تصدير Excel ▾</button>
+        <div class="export-dropdown" id="exportDropdown"></div>
+      </div>
+      <button class="btn secondary" id="printBtn">طباعة التقرير</button>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>النوع</th>
+            <th>رقم الأصل</th>
+            <th>الشركة / الموديل</th>
+            <th>المواصفات</th>
+            <th>الموقع</th>
+            <th>المستخدم</th>
+            <th>الحالة</th>
+            <th>تاريخ الشراء</th>
+            <th class="no-print">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="emptyMsg" style="display:none">لا توجد أجهزة مسجلة بعد. ابدأ بإضافة جهاز من النموذج أعلاه.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const URL_KEY = 'sru_infra_sheet_url';
+
+const TYPE_LABELS = {
+  PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
+  Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Other:'أخرى'
+};
+const STATUS_LABELS = {
+  Active:{ar:'نشط', cls:'active'}, Storage:{ar:'في المخزن', cls:'storage'},
+  Repair:{ar:'تحت الصيانة', cls:'repair'}, Retired:{ar:'خارج الخدمة', cls:'retired'}
+};
+const EXTRA_FIELDS = {
+  PC:      [['ip','عنوان IP'], ['ram','الذاكرة RAM']],
+  Laptop:  [['ip','عنوان IP'], ['ram','الذاكرة RAM']],
+  Screen:  [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
+  Printer: [['ip','عنوان IP'], ['toner','موديل الحبر/التونر']],
+  Switch:  [['ip','عنوان IP'], ['ports','عدد المنافذ']],
+  UPS:     [['capacity','السعة (VA)'], ['battery','حالة البطارية']],
+  Scanner: [['conn','نوع الاتصال'], ['','']],
+  Other:   [['spec1','مواصفة 1'], ['spec2','مواصفة 2']]
+};
+
+let devices = [];
+let editingId = null;
+let sheetUrl = localStorage.getItem(URL_KEY) || '';
+
+function uid(){ return 'd'+Date.now()+Math.random().toString(16).slice(2,8); }
+
+// ---- connection status ----
+function setSync(state, text){
+  const dot = document.getElementById('syncDot');
+  dot.className = 'sync-dot' + (state ? ' '+state : '');
+  document.getElementById('syncText').textContent = text;
+}
+
+// ---- API calls to Apps Script ----
+async function apiList(){
+  if(!sheetUrl) return;
+  setSync('busy','جارٍ التحميل من جوجل شيت...');
+  try{
+    const res = await fetch(sheetUrl, {method:'GET'});
+    const json = await res.json();
+    if(!json.success) throw new Error(json.error || 'فشل التحميل');
+    devices = [];
+    Object.keys(json.data).forEach(type=>{
+      json.data[type].forEach(rec=>{
+        devices.push(Object.assign({type:type}, rec));
+      });
+    });
+    setSync('ok','متصل - آخر تحديث: '+ new Date().toLocaleTimeString('ar-SA'));
+  }catch(err){
+    setSync('err','تعذر الاتصال بجوجل شيت: '+err.message);
+  }
+  renderAll();
+}
+
+async function apiWrite(action, record, idForDelete){
+  if(!sheetUrl){
+    alert('الرجاء إدخال رابط Google Apps Script Web App أولاً.');
+    return false;
+  }
+  setSync('busy','جارٍ الحفظ في جوجل شيت...');
+  try{
+    const body = action==='delete'
+      ? {action, type: record.type, id: idForDelete}
+      : {action, type: record.type, record};
+    const res = await fetch(sheetUrl, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'}, // avoids CORS preflight on Apps Script
+      body: JSON.stringify(body)
+    });
+    const json = await res.json();
+    if(!json.success) throw new Error(json.error || 'فشلت العملية');
+    setSync('ok','تم الحفظ - '+ new Date().toLocaleTimeString('ar-SA'));
+    return true;
+  }catch(err){
+    setSync('err','فشل الحفظ: '+err.message);
+    alert('تعذر الحفظ في جوجل شيت: '+err.message);
+    return false;
+  }
+}
+
+// ---- setup banner ----
+function refreshSetupBanner(){
+  const banner = document.getElementById('setupBanner');
+  const input = document.getElementById('sheetUrlInput');
+  if(sheetUrl){
+    banner.style.display='none';
+  } else {
+    banner.style.display='flex';
+  }
+  input.value = sheetUrl;
+}
+document.getElementById('saveUrlBtn').addEventListener('click', ()=>{
+  const v = document.getElementById('sheetUrlInput').value.trim();
+  if(!v){ alert('الرجاء إدخال رابط صحيح.'); return; }
+  sheetUrl = v;
+  localStorage.setItem(URL_KEY, v);
+  refreshSetupBanner();
+  apiList();
+});
+document.getElementById('refreshBtn').addEventListener('click', apiList);
+
+// ---- form extra fields ----
+const typeSelect = document.getElementById('f_type');
+typeSelect.addEventListener('change', renderExtraFields);
+function renderExtraFields(){
+  const t = typeSelect.value;
+  const conf = EXTRA_FIELDS[t] || [];
+  [1,2].forEach((n,i)=>{
+    const wrap = document.getElementById('f_extra'+n+'_wrap');
+    const label = document.getElementById('f_extra'+n+'_label');
+    const field = conf[i];
+    if(field && field[0]){
+      wrap.style.display='block';
+      label.textContent = field[1];
+      wrap.dataset.key = field[0];
+    } else {
+      wrap.style.display='none';
+      wrap.dataset.key='';
+      document.getElementById('f_extra'+n).value='';
+    }
+  });
+}
+
+function clearForm(){
+  ['f_type','f_tag','f_brand','f_model','f_serial','f_extra1','f_extra2','f_location','f_user','f_date','f_notes'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('f_status').value='Active';
+  renderExtraFields();
+  editingId = null;
+  document.getElementById('saveBtn').textContent = 'حفظ الجهاز';
+}
+document.getElementById('clearBtn').addEventListener('click', clearForm);
+
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  const type = document.getElementById('f_type').value;
+  const tag = document.getElementById('f_tag').value.trim();
+  const location = document.getElementById('f_location').value.trim();
+  if(!type || !tag || !location){
+    alert('الرجاء تعبئة الحقول الإلزامية: نوع الجهاز، رقم الأصل، الموقع.');
+    return;
+  }
+  const extra1wrap = document.getElementById('f_extra1_wrap');
+  const extra2wrap = document.getElementById('f_extra2_wrap');
+  const specs = {};
+  if(extra1wrap.dataset.key) specs[extra1wrap.dataset.key] = document.getElementById('f_extra1').value.trim();
+  if(extra2wrap.dataset.key) specs[extra2wrap.dataset.key] = document.getElementById('f_extra2').value.trim();
+
+  const record = {
+    id: editingId || uid(),
+    type, tag,
+    brand: document.getElementById('f_brand').value.trim(),
+    model: document.getElementById('f_model').value.trim(),
+    serial: document.getElementById('f_serial').value.trim(),
+    specs,
+    location,
+    user: document.getElementById('f_user').value.trim(),
+    status: document.getElementById('f_status').value,
+    date: document.getElementById('f_date').value,
+    notes: document.getElementById('f_notes').value.trim()
+  };
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  const ok = await apiWrite(editingId ? 'update' : 'add', record);
+  btn.disabled = false;
+  if(ok){
+    clearForm();
+    await apiList();
+  }
+});
+
+function editDevice(id){
+  const d = devices.find(x=>x.id===id);
+  if(!d) return;
+  document.getElementById('f_type').value = d.type;
+  renderExtraFields();
+  document.getElementById('f_tag').value = d.tag;
+  document.getElementById('f_brand').value = d.brand;
+  document.getElementById('f_model').value = d.model;
+  document.getElementById('f_serial').value = d.serial;
+  const extra1wrap = document.getElementById('f_extra1_wrap');
+  const extra2wrap = document.getElementById('f_extra2_wrap');
+  if(extra1wrap.dataset.key) document.getElementById('f_extra1').value = (d.specs && d.specs[extra1wrap.dataset.key]) || '';
+  if(extra2wrap.dataset.key) document.getElementById('f_extra2').value = (d.specs && d.specs[extra2wrap.dataset.key]) || '';
+  document.getElementById('f_location').value = d.location;
+  document.getElementById('f_user').value = d.user;
+  document.getElementById('f_status').value = d.status;
+  document.getElementById('f_date').value = d.date;
+  document.getElementById('f_notes').value = d.notes;
+  editingId = id;
+  document.getElementById('saveBtn').textContent = 'تحديث الجهاز';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function deleteDevice(id){
+  if(!confirm('هل أنت متأكد من حذف هذا الجهاز؟')) return;
+  const d = devices.find(x=>x.id===id);
+  if(!d) return;
+  const ok = await apiWrite('delete', {type:d.type}, id);
+  if(ok) await apiList();
+}
+
+// ---- filters ----
+function populateTypeFilter(){
+  const sel = document.getElementById('filterType');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">الكل</option>' +
+    Object.keys(TYPE_LABELS).map(t=>`<option value="${t}">${TYPE_LABELS[t]}</option>`).join('');
+  sel.value = current;
+}
+
+function specsToText(d){
+  const conf = EXTRA_FIELDS[d.type] || [];
+  return conf.filter(f=>f[0]).map(f=>{
+    const v = d.specs ? d.specs[f[0]] : null;
+    return v ? `${f[1]}: ${v}` : null;
+  }).filter(Boolean).join(' | ') || '-';
+}
+
+function getFiltered(){
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  const ft = document.getElementById('filterType').value;
+  const fs = document.getElementById('filterStatus').value;
+  return devices.filter(d=>{
+    if(ft && d.type!==ft) return false;
+    if(fs && d.status!==fs) return false;
+    if(q){
+      const hay = [d.tag,d.brand,d.model,d.serial,d.location,d.user,d.notes].join(' ').toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderTable(){
+  const list = getFiltered();
+  const tbody = document.getElementById('tbody');
+  const emptyMsg = document.getElementById('emptyMsg');
+  if(list.length===0){
+    tbody.innerHTML='';
+    emptyMsg.style.display='block';
+    return;
+  }
+  emptyMsg.style.display='none';
+  tbody.innerHTML = list.map(d=>{
+    const st = STATUS_LABELS[d.status] || {ar:d.status,cls:''};
+    return `<tr>
+      <td><span class="chip type">${TYPE_LABELS[d.type]||d.type}</span></td>
+      <td><span class="sru-en">${escapeHtml(d.tag)}</span></td>
+      <td>${escapeHtml(d.brand)} ${escapeHtml(d.model)}</td>
+      <td>${escapeHtml(specsToText(d))}</td>
+      <td>${escapeHtml(d.location)}</td>
+      <td>${escapeHtml(d.user)||'-'}</td>
+      <td><span class="chip ${st.cls}">${st.ar}</span></td>
+      <td><span class="sru-en">${d.date||'-'}</span></td>
+      <td class="no-print">
+        <div class="row-actions">
+          <button class="btn small secondary" onclick="editDevice('${d.id}')">تعديل</button>
+          <button class="btn small danger" onclick="deleteDevice('${d.id}')">حذف</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function escapeHtml(s){
+  if(s===undefined||s===null) return '';
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderDash(){
+  const total = devices.length;
+  const byType = {};
+  devices.forEach(d=>{ byType[d.type]=(byType[d.type]||0)+1; });
+  const activeCount = devices.filter(d=>d.status==='Active').length;
+  const repairCount = devices.filter(d=>d.status==='Repair').length;
+
+  let html = `<div class="stat total"><div class="num">${total}</div><div class="lbl">إجمالي الأجهزة</div></div>`;
+  html += `<div class="stat"><div class="num">${activeCount}</div><div class="lbl">أجهزة نشطة</div></div>`;
+  html += `<div class="stat"><div class="num">${repairCount}</div><div class="lbl">تحت الصيانة</div></div>`;
+  const topTypes = Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  topTypes.forEach(([t,c])=>{
+    html += `<div class="stat"><div class="num">${c}</div><div class="lbl">${TYPE_LABELS[t]||t}</div></div>`;
+  });
+  document.getElementById('dashStats').innerHTML = html;
+}
+
+function renderAll(){
+  populateTypeFilter();
+  renderDash();
+  renderTable();
+}
+
+// ---- export ----
+function buildSheetData(list){
+  const header = ['نوع الجهاز','رقم الأصل','الشركة المصنعة','الموديل','الرقم التسلسلي','المواصفات','الموقع/القسم','المستخدم المسؤول','الحالة','تاريخ الشراء','ملاحظات'];
+  const rows = list.map(d=>[
+    TYPE_LABELS[d.type]||d.type, d.tag, d.brand, d.model, d.serial,
+    specsToText(d), d.location, d.user,
+    (STATUS_LABELS[d.status]||{ar:d.status}).ar, d.date, d.notes
+  ]);
+  return [header, ...rows];
+}
+
+function exportWorkbook(mode, singleType){
+  if(devices.length===0){ alert('لا توجد بيانات لتصديرها.'); return; }
+  const wb = XLSX.utils.book_new();
+  if(mode==='all-in-one'){
+    const ws = XLSX.utils.aoa_to_sheet(buildSheetData(devices));
+    XLSX.utils.book_append_sheet(wb, ws, 'جميع الأجهزة');
+  } else if(mode==='by-type-all'){
+    Object.keys(TYPE_LABELS).forEach(t=>{
+      const list = devices.filter(d=>d.type===t);
+      if(list.length===0) return;
+      const ws = XLSX.utils.aoa_to_sheet(buildSheetData(list));
+      XLSX.utils.book_append_sheet(wb, ws, TYPE_LABELS[t].slice(0,31));
+    });
+  } else if(mode==='single-type'){
+    const list = devices.filter(d=>d.type===singleType);
+    if(list.length===0){ alert('لا توجد أجهزة من هذا النوع.'); return; }
+    const ws = XLSX.utils.aoa_to_sheet(buildSheetData(list));
+    XLSX.utils.book_append_sheet(wb, ws, (TYPE_LABELS[singleType]||singleType).slice(0,31));
+  }
+  const dateStr = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `SRU_Infrastructure_Inventory_${dateStr}.xlsx`);
+}
+
+function buildExportDropdown(){
+  const dd = document.getElementById('exportDropdown');
+  let html = `<a data-mode="by-type-all">تصدير الكل (ورقة لكل نوع)</a>`;
+  html += `<a data-mode="all-in-one">تصدير الكل (ورقة واحدة)</a>`;
+  Object.keys(TYPE_LABELS).forEach(t=>{
+    html += `<a data-mode="single-type" data-type="${t}">تصدير: ${TYPE_LABELS[t]} فقط</a>`;
+  });
+  dd.innerHTML = html;
+  dd.querySelectorAll('a').forEach(a=>{
+    a.addEventListener('click', ()=>{
+      exportWorkbook(a.dataset.mode, a.dataset.type);
+      dd.classList.remove('open');
+    });
+  });
+}
+document.getElementById('exportToggle').addEventListener('click', (e)=>{
+  document.getElementById('exportDropdown').classList.toggle('open');
+  e.stopPropagation();
+});
+document.addEventListener('click', ()=>{
+  document.getElementById('exportDropdown').classList.remove('open');
+});
+document.getElementById('printBtn').addEventListener('click', ()=>window.print());
+
+['searchBox','filterType','filterStatus'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderTable);
+  document.getElementById(id).addEventListener('change', renderTable);
+});
+
+// init
+renderExtraFields();
+buildExportDropdown();
+refreshSetupBanner();
+renderAll();
+if(sheetUrl) apiList();
+else setSync('','لم يتم الربط بجوجل شيت بعد');
+</script>
+</body>
+</html>
