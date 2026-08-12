@@ -237,6 +237,19 @@
           <label id="planLabel" data-i18n="planLabel">خطة المعالجة</label>
           <textarea id="fMitigation" data-i18n-ph="phMitigation"></textarea>
         </div>
+        <div class="form-group">
+          <label data-i18n="lblStatus">الحالة</label>
+          <select id="fStatus">
+            <option data-i18n="statusNew">جديد</option>
+            <option data-i18n="statusReview">قيد المراجعة</option>
+            <option data-i18n="statusApproved">معتمد</option>
+            <option data-i18n="statusClosed">مغلق</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lblReviewDate">تاريخ المراجعة القادمة</label>
+          <input type="date" id="fReviewDate"/>
+        </div>
       </div>
       <div style="margin-top:16px;display:flex;gap:10px">
         <button class="btn btn-primary" onclick="addRisk()" id="btnAdd" data-i18n="btnAdd">➕ إضافة خطر</button>
@@ -265,6 +278,13 @@
           <option value="High" data-i18n="sevHigh">مرتفعة</option>
           <option value="Critical" data-i18n="sevCritical">حرجة</option>
         </select>
+        <select class="filter-input" id="filterStatus" onchange="renderTable()" style="width:140px">
+          <option value="" data-i18n="allStatus">كل الحالات</option>
+          <option data-i18n="statusNew">جديد</option>
+          <option data-i18n="statusReview">قيد المراجعة</option>
+          <option data-i18n="statusApproved">معتمد</option>
+          <option data-i18n="statusClosed">مغلق</option>
+        </select>
         <span class="spacer"></span>
         <span id="rowCount" style="font-size:.8rem;color:var(--muted)"></span>
         <button class="btn btn-success btn-sm" onclick="exportCSV()" data-i18n="btnExport">⬇ تصدير CSV</button>
@@ -287,6 +307,8 @@
               <th data-i18n="thOwner">المالك</th>
               <th data-i18n="thResponse">الاستجابة</th>
               <th data-i18n="thMitigation">خطة المعالجة</th>
+              <th data-i18n="thStatus">الحالة</th>
+              <th data-i18n="thReviewDate">تاريخ المراجعة</th>
               <th class="no-print" data-i18n="thActions">إجراءات</th>
             </tr>
           </thead>
@@ -342,7 +364,10 @@ const dict = {
     cfgLabel:"رابط جوجل شيت (Web App URL):", cfgSave:"حفظ", cfgToggle:"⚙ إعدادات الاتصال",
     syncSaved:"تم الحفظ. جاري التحميل...", syncLoading:"جاري التحميل من الشيت...",
     syncOk:"متصل بجوجل شيت ✓", syncErr:"تعذر الاتصال بجوجل شيت — تحقق من الرابط",
-    syncNone:"لم يتم ضبط رابط جوجل شيت — يتم الحفظ محلياً فقط", syncSending:"جاري الإرسال..."
+    syncNone:"لم يتم ضبط رابط جوجل شيت — يتم الحفظ محلياً فقط", syncSending:"جاري الإرسال...",
+    lblStatus:"الحالة", statusNew:"جديد", statusReview:"قيد المراجعة", statusApproved:"معتمد", statusClosed:"مغلق",
+    lblReviewDate:"تاريخ المراجعة القادمة", allStatus:"كل الحالات",
+    thStatus:"الحالة", thReviewDate:"تاريخ المراجعة", overdue:"متأخر"
   },
   en:{
     siteTitle:"Institutional Risk Register", siteSub:"Sulaiman Al Rajhi University — ICT Executive Directorate",
@@ -382,7 +407,10 @@ const dict = {
     cfgLabel:"Google Sheet Web App URL:", cfgSave:"Save", cfgToggle:"⚙ Connection settings",
     syncSaved:"Saved. Loading...", syncLoading:"Loading from sheet...",
     syncOk:"Connected to Google Sheet ✓", syncErr:"Could not connect — check the URL",
-    syncNone:"No Google Sheet URL set — saving locally only", syncSending:"Sending..."
+    syncNone:"No Google Sheet URL set — saving locally only", syncSending:"Sending...",
+    lblStatus:"Status", statusNew:"New", statusReview:"Under Review", statusApproved:"Approved", statusClosed:"Closed",
+    lblReviewDate:"Next Review Date", allStatus:"All Statuses",
+    thStatus:"Status", thReviewDate:"Review Date", overdue:"Overdue"
   }
 };
 
@@ -509,9 +537,10 @@ function updatePlanLabel(){
 }
 
 function clearForm(){
-  ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation'].forEach(id=>{
+  ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation','fReviewDate'].forEach(id=>{
     document.getElementById(id).value = '';
   });
+  document.getElementById('fStatus').selectedIndex = 0;
   calcScore();
   updatePlanLabel();
   editId = null;
@@ -529,6 +558,8 @@ async function addRisk(){
   const owner = document.getElementById('fOwner').value.trim();
   const response = document.getElementById('fResponse').value;
   const mit = document.getElementById('fMitigation').value.trim();
+  const status = document.getElementById('fStatus').value;
+  const reviewDate = document.getElementById('fReviewDate').value;
   const err = document.getElementById('formError');
   const t = dict[currentLang];
 
@@ -542,7 +573,7 @@ async function addRisk(){
   const score = +lik * +imp;
   const risk = {
     id: editId || Date.now(),
-    title, dept, cat, desc, lik:+lik, imp:+imp, score, owner, response, mit,
+    title, dept, cat, desc, lik:+lik, imp:+imp, score, owner, response, mit, status, reviewDate,
     date: editId ? (risks.find(r=>r.id===editId)||{}).date : new Date().toLocaleDateString('en-GB')
   };
 
@@ -609,6 +640,8 @@ function editRisk(id){
   document.getElementById('fOwner').value = r.owner;
   document.getElementById('fResponse').value = r.response || '';
   document.getElementById('fMitigation').value = r.mit;
+  document.getElementById('fStatus').value = r.status || 'New';
+  document.getElementById('fReviewDate').value = r.reviewDate || '';
   calcScore();
   updatePlanLabel();
   editId = id;
@@ -637,11 +670,19 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
+function isOverdue(dateStr){
+  if(!dateStr) return false;
+  const d = new Date(dateStr);
+  const today = new Date(); today.setHours(0,0,0,0);
+  return d < today;
+}
+
 function renderTable(){
   const q = document.getElementById('searchInput').value.toLowerCase();
   const fd = document.getElementById('filterDept').value;
   const fc = document.getElementById('filterCat').value;
   const fs = document.getElementById('filterSev').value;
+  const fst = document.getElementById('filterStatus').value;
   const tbody = document.getElementById('riskTableBody');
   const empty = document.getElementById('emptyState');
   const count = document.getElementById('rowCount');
@@ -652,7 +693,8 @@ function renderTable(){
     const matchD = !fd || r.dept === fd;
     const matchC = !fc || r.cat === fc;
     const matchS = !fs || scoreInfo(r.score).label === fs;
-    return matchQ && matchD && matchC && matchS;
+    const matchSt = !fst || (r.status || 'New') === fst;
+    return matchQ && matchD && matchC && matchS && matchSt;
   });
 
   if(!filtered.length){
@@ -679,6 +721,8 @@ function renderTable(){
       <td>${escapeHtml(r.owner)}</td>
       <td>${escapeHtml(r.response)||'—'}</td>
       <td style="max-width:190px;white-space:normal">${escapeHtml(r.mit)||'—'}</td>
+      <td><span class="badge badge-dept">${escapeHtml(r.status || 'New')}</span></td>
+      <td>${r.reviewDate ? `<span style="${isOverdue(r.reviewDate) ? 'color:#dc2626;font-weight:700' : ''}">${escapeHtml(r.reviewDate)}${isOverdue(r.reviewDate) ? ' ⚠' : ''}</span>` : '—'}</td>
       <td class="no-print" style="white-space:nowrap">
         <button class="btn btn-warning btn-sm" onclick="editRisk(${r.id})">${t.editBtn}</button>
         <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteRisk(${r.id})">${t.delBtn}</button>
@@ -701,11 +745,12 @@ function updateStats(){
 function exportCSV(){
   const t = dict[currentLang];
   if(!risks.length){alert(t.noRisks);return;}
-  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,'Date'];
+  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,t.thStatus,t.thReviewDate,'Date'];
   const rows = risks.map(r=>[
     `"${(r.title||'').replace(/"/g,'""')}"`, `"${(r.dept||'').replace(/"/g,'""')}"`, `"${(r.cat||'').replace(/"/g,'""')}"`,
     `"${(r.desc||'').replace(/"/g,'""')}"`, r.lik, r.imp, r.score, dict[currentLang][scoreInfo(r.score).labelKey],
-    `"${(r.owner||'').replace(/"/g,'""')}"`, `"${(r.response||'').replace(/"/g,'""')}"`, `"${(r.mit||'').replace(/"/g,'""')}"`, r.date
+    `"${(r.owner||'').replace(/"/g,'""')}"`, `"${(r.response||'').replace(/"/g,'""')}"`, `"${(r.mit||'').replace(/"/g,'""')}"`,
+    `"${(r.status||'New').replace(/"/g,'""')}"`, r.reviewDate || '', r.date
   ]);
   const csv = '\uFEFF' + [headers, ...rows].map(r=>r.join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
