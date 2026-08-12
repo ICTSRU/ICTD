@@ -145,6 +145,7 @@
 </div>
 <div class="sru-diag"></div>
 <div class="cfg-bar no-print" id="cfgBar" style="justify-content:flex-end">
+  <span class="sync-status" id="whoamiStatus"></span>
   <span class="sync-status" id="syncStatus"></span>
   <a href="#" onclick="toggleCfg();return false;" style="font-size:.76rem;color:var(--purple)" data-i18n="cfgToggle">⚙ إعدادات الاتصال</a>
 </div>
@@ -341,6 +342,7 @@
               <th data-i18n="thReviewDate">تاريخ المراجعة</th>
               <th data-i18n="thFramework">الإطار</th>
               <th data-i18n="thEvidence">أدلة</th>
+              <th data-i18n="thSubmittedBy">مقدّم الطلب</th>
               <th class="no-print" data-i18n="thActions">إجراءات</th>
             </tr>
           </thead>
@@ -419,9 +421,11 @@ const dict = {
     thStatus:"الحالة", thReviewDate:"تاريخ المراجعة", overdue:"متأخر",
     lblFramework:"الإطار المرجعي", optSelectFw:"-- اختر (اختياري) --",
     lblEvidence:"رابط المرفقات / الأدلة", phEvidence:"https://drive.google.com/...",
-    thFramework:"الإطار", thEvidence:"أدلة", evidenceLink:"عرض",
+    thFramework:"الإطار", thEvidence:"أدلة", evidenceLink:"عرض", thSubmittedBy:"مقدّم الطلب",
     dashHeader:"📊 لوحة المخاطر", heatmapTitle:"مصفوفة الحرارة (الاحتمالية × الأثر)", byDeptTitle:"المخاطر حسب الإدارة",
-    axisImpact:"الأثر", axisLikelihood:"الاحتمالية"
+    axisImpact:"الأثر", axisLikelihood:"الاحتمالية",
+    accessPrompt:"يرجى إدخال رمز الوصول للتسجيل أو التعديل:", accessDenied:"رمز الوصول غير صحيح.",
+    signedInAs:"مسجل الدخول باسم:", notSignedIn:"غير مسجل الدخول بحساب جوجل"
   },
   en:{
     siteTitle:"Institutional Risk Register", siteSub:"Sulaiman Al Rajhi University — ICT Executive Directorate",
@@ -467,9 +471,11 @@ const dict = {
     thStatus:"Status", thReviewDate:"Review Date", overdue:"Overdue",
     lblFramework:"Framework Reference", optSelectFw:"-- Select (optional) --",
     lblEvidence:"Evidence / Attachment Link", phEvidence:"https://drive.google.com/...",
-    thFramework:"Framework", thEvidence:"Evidence", evidenceLink:"View",
+    thFramework:"Framework", thEvidence:"Evidence", evidenceLink:"View", thSubmittedBy:"Submitted By",
     dashHeader:"📊 Risk Dashboard", heatmapTitle:"Heat Map (Likelihood × Impact)", byDeptTitle:"Risks by Department",
-    axisImpact:"Impact", axisLikelihood:"Likelihood"
+    axisImpact:"Impact", axisLikelihood:"Likelihood",
+    accessPrompt:"Enter the access code to register or edit a risk:", accessDenied:"Incorrect access code.",
+    signedInAs:"Signed in as:", notSignedIn:"Not signed in with a Google account"
   }
 };
 
@@ -525,6 +531,25 @@ function saveApiUrl(){
   loadRisks();
 }
 
+async function checkWhoAmI(){
+  const el = document.getElementById('whoamiStatus');
+  if(!API_URL){ el.textContent = ''; return; }
+  try{
+    const res = await fetch(`${API_URL}?action=whoami`);
+    const data = await res.json();
+    const t = dict[currentLang];
+    if(data.ok && data.email){
+      el.textContent = `${t.signedInAs} ${data.email}`;
+      el.className = 'sync-status ok';
+    } else {
+      el.textContent = t.notSignedIn;
+      el.className = 'sync-status';
+    }
+  } catch(e){
+    el.textContent = '';
+  }
+}
+
 async function loadRisks(){
   if(!API_URL){
     // fallback: local-only mode
@@ -537,6 +562,7 @@ async function loadRisks(){
     return;
   }
   setSyncStatus('syncLoading');
+  checkWhoAmI();
   try{
     const res = await fetch(API_URL);
     const data = await res.json();
@@ -607,7 +633,33 @@ function clearForm(){
   document.getElementById('formError').style.display='none';
 }
 
+/* ============ Access Control ============ */
+// Shared access code required to add/edit/delete risks. Change this to your own code.
+const ACCESS_CODE = 'SRU-Risk-2026';
+
+function hasAccess(){
+  return sessionStorage.getItem('sriskregister_access') === 'granted';
+}
+
+function requestAccess(){
+  const t = dict[currentLang];
+  const entered = prompt(t.accessPrompt);
+  if(entered === null) return false;
+  if(entered === ACCESS_CODE){
+    sessionStorage.setItem('sriskregister_access', 'granted');
+    return true;
+  }
+  alert(t.accessDenied);
+  return false;
+}
+
+function ensureAccess(){
+  if(hasAccess()) return true;
+  return requestAccess();
+}
+
 async function addRisk(){
+  if(!ensureAccess()) return;
   const title = document.getElementById('fTitle').value.trim();
   const dept = document.getElementById('fDept').value;
   const cat = document.getElementById('fCategory').value;
@@ -672,6 +724,7 @@ async function addRisk(){
 }
 
 async function deleteRisk(id){
+  if(!ensureAccess()) return;
   if(!confirm(dict[currentLang].confirmDel)) return;
   if(!API_URL){
     risks = risks.filter(r=>r.id!==id);
@@ -690,6 +743,7 @@ async function deleteRisk(id){
 }
 
 function editRisk(id){
+  if(!ensureAccess()) return;
   const r = risks.find(r=>r.id===id);
   if(!r) return;
   document.getElementById('fTitle').value = r.title;
@@ -788,6 +842,7 @@ function renderTable(){
       <td>${r.reviewDate ? `<span style="${isOverdue(r.reviewDate) ? 'color:#dc2626;font-weight:700' : ''}">${escapeHtml(r.reviewDate)}${isOverdue(r.reviewDate) ? ' ⚠' : ''}</span>` : '—'}</td>
       <td>${escapeHtml(r.framework)||'—'}</td>
       <td>${r.evidenceUrl ? `<a href="${escapeHtml(r.evidenceUrl)}" target="_blank" rel="noopener" style="color:var(--blue)">${t.evidenceLink}</a>` : '—'}</td>
+      <td style="font-size:.74rem;color:var(--muted)">${escapeHtml(r.submittedBy)||'—'}</td>
       <td class="no-print" style="white-space:nowrap">
         <button class="btn btn-warning btn-sm" onclick="editRisk(${r.id})">${t.editBtn}</button>
         <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteRisk(${r.id})">${t.delBtn}</button>
@@ -849,12 +904,12 @@ function renderDashboard(){
 function exportCSV(){
   const t = dict[currentLang];
   if(!risks.length){alert(t.noRisks);return;}
-  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,t.thStatus,t.thReviewDate,t.thFramework,t.thEvidence,'Date'];
+  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,t.thStatus,t.thReviewDate,t.thFramework,t.thEvidence,t.thSubmittedBy,'Date'];
   const rows = risks.map(r=>[
     `"${(r.title||'').replace(/"/g,'""')}"`, `"${(r.dept||'').replace(/"/g,'""')}"`, `"${(r.cat||'').replace(/"/g,'""')}"`,
     `"${(r.desc||'').replace(/"/g,'""')}"`, r.lik, r.imp, r.score, dict[currentLang][scoreInfo(r.score).labelKey],
     `"${(r.owner||'').replace(/"/g,'""')}"`, `"${(r.response||'').replace(/"/g,'""')}"`, `"${(r.mit||'').replace(/"/g,'""')}"`,
-    `"${(r.status||'New').replace(/"/g,'""')}"`, r.reviewDate || '', `"${(r.framework||'').replace(/"/g,'""')}"`, r.evidenceUrl || '', r.date
+    `"${(r.status||'New').replace(/"/g,'""')}"`, r.reviewDate || '', `"${(r.framework||'').replace(/"/g,'""')}"`, r.evidenceUrl || '', `"${(r.submittedBy||'').replace(/"/g,'""')}"`, r.date
   ]);
   const csv = '\uFEFF' + [headers, ...rows].map(r=>r.join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
