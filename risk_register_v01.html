@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlRoot">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>سجل المخاطر | Risk Register – SRU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple:#501e8c;
+    --purple-dark:#3a1464;
+    --purple-light:#f0ebf8;
+    --blue:#0a6eaa;
+    --blue-light:#e6f3fa;
+    --bg:#f7f5fb;
+    --border:rgba(80,30,140,0.12);
+    --ink:#241436;
+    --muted:#6b5a80;
+    --radius:4px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Cairo','Tahoma',Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+  .sru-en{direction:ltr;unicode-bidi:isolate}
+
+  /* Header */
+  .topbar{background:var(--purple-dark);color:#fff;padding:14px 28px;display:flex;align-items:center;gap:16px}
+  .topbar .logo-badge{width:46px;height:46px;background:#fff;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--purple-dark);font-size:16px;flex-shrink:0}
+  .topbar .titles{flex:1}
+  .topbar h1{font-size:1.15rem;font-weight:700}
+  .topbar p{font-size:.78rem;opacity:.85;margin-top:2px}
+  .navbar{background:var(--purple);color:#fff;padding:8px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .lang-switch{margin-inline-start:auto;display:flex;gap:6px}
+  .lang-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 14px;border-radius:var(--radius);font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
+  .lang-btn.active{background:#fff;color:var(--purple-dark)}
+
+  .sru-diag{height:5px;background:linear-gradient(90deg,var(--blue),var(--purple));width:100%}
+
+  .container{max-width:1320px;margin:0 auto;padding:24px 20px}
+  .card{background:#fff;border-radius:8px;border:1px solid var(--border);box-shadow:0 2px 12px rgba(80,30,140,.06);margin-bottom:22px;overflow:hidden}
+  .card-header{background:var(--purple-light);color:var(--purple-dark);padding:13px 18px;font-weight:700;font-size:.92rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+  .card-body{padding:20px}
+
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .form-group{display:flex;flex-direction:column;gap:6px}
+  .form-group.full{grid-column:1/-1}
+  label{font-size:.8rem;font-weight:700;color:var(--muted)}
+  input,select,textarea{border:1.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:.88rem;font-family:inherit;width:100%;color:var(--ink);background:#fff}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px rgba(80,30,140,.1)}
+  textarea{resize:vertical;min-height:70px}
+
+  .score-display{background:var(--bg);border:2px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;margin-top:2px}
+  .score-display .score-val{font-size:2rem;font-weight:800}
+  .score-display .score-label{font-size:.76rem;color:var(--muted);margin-top:2px}
+
+  .btn{padding:10px 18px;border:none;border-radius:var(--radius);font-size:.85rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+  .btn-primary{background:var(--purple);color:#fff}
+  .btn-primary:hover{background:var(--purple-dark)}
+  .btn-secondary{background:#fff;color:var(--purple);border:1px solid var(--purple)}
+  .btn-secondary:hover{background:var(--purple-light)}
+  .btn-success{background:#16a34a;color:#fff}
+  .btn-warning{background:#d97706;color:#fff}
+  .btn-danger{background:#dc2626;color:#fff}
+  .btn-sm{padding:5px 10px;font-size:.76rem}
+
+  .actions-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+  .actions-bar .spacer{flex:1}
+  .filter-input{border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:.85rem;width:210px;font-family:inherit}
+
+  table{width:100%;border-collapse:collapse;font-size:.82rem}
+  thead tr{background:var(--purple)}
+  thead th{padding:11px 9px;text-align:start;font-weight:700;color:#fff;white-space:nowrap}
+  tbody tr{border-bottom:1px solid var(--border)}
+  tbody tr:hover{background:var(--blue-light)}
+  tbody td{padding:10px 9px;vertical-align:top}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.73rem;font-weight:700;white-space:nowrap}
+  .badge-low{background:#dcfce7;color:#166534}
+  .badge-medium{background:#fef9c3;color:#854d0e}
+  .badge-high{background:#fed7aa;color:#9a3412}
+  .badge-critical{background:#fee2e2;color:#991b1b}
+  .badge-dept{background:var(--blue-light);color:var(--blue);border-radius:var(--radius)}
+
+  .empty-state{text-align:center;padding:44px 20px;color:#9ca3af}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .stat-card{background:#fff;border-radius:8px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(80,30,140,.06);border-top:4px solid;border-color:var(--border)}
+  .stat-card.total{border-top-color:var(--purple)}
+  .stat-card.low{border-top-color:#16a34a}
+  .stat-card.high{border-top-color:#d97706}
+  .stat-card.critical{border-top-color:#dc2626}
+  .stat-val{font-size:1.8rem;font-weight:800;color:var(--ink)}
+  .stat-lbl{font-size:.74rem;color:var(--muted);margin-top:4px}
+
+  #formError{color:#dc2626;font-size:.83rem;margin-top:8px;display:none}
+
+  @media print{
+    .topbar,.navbar,.sru-diag{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .no-print{display:none!important}
+    .card{box-shadow:none;border:1px solid #e5e7eb}
+    body{background:#fff}
+  }
+  @media(max-width:760px){
+    .form-grid{grid-template-columns:1fr}
+    .stats-row{grid-template-columns:1fr 1fr}
+    .topbar,.navbar{padding:12px 16px}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo-badge">SRU</div>
+  <div class="titles">
+    <h1 data-i18n="siteTitle">سجل المخاطر المؤسسي</h1>
+    <p data-i18n="siteSub">جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات</p>
+  </div>
+</div>
+<div class="navbar no-print">
+  <span data-i18n="navHint" style="font-size:.8rem;opacity:.9">سجّل وتابع مخاطر إدارتك</span>
+  <div class="lang-switch">
+    <button class="lang-btn" id="btnAr" onclick="setLang('ar')">العربية</button>
+    <button class="lang-btn" id="btnEn" onclick="setLang('en')">English</button>
+  </div>
+</div>
+<div class="sru-diag"></div>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card total"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl" data-i18n="statTotal">إجمالي المخاطر</div></div>
+    <div class="stat-card low"><div class="stat-val" id="statLow">0</div><div class="stat-lbl" data-i18n="statLow">منخفضة / متوسطة</div></div>
+    <div class="stat-card high"><div class="stat-val" id="statHigh">0</div><div class="stat-lbl" data-i18n="statHigh">مرتفعة</div></div>
+    <div class="stat-card critical"><div class="stat-val" id="statCritical">0</div><div class="stat-lbl" data-i18n="statCritical">حرجة</div></div>
+  </div>
+
+  <!-- Form -->
+  <div class="card no-print">
+    <div class="card-header"><span data-i18n="formHeader">➕ تسجيل خطر جديد</span></div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label data-i18n="lblTitle">عنوان الخطر *</label>
+          <input type="text" id="fTitle" data-i18n-ph="phTitle"/>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lblDept">الإدارة / القسم *</label>
+          <select id="fDept">
+            <option value="" data-i18n="optSelect">-- اختر الإدارة --</option>
+            <option data-i18n="deptIT">تقنية المعلومات</option>
+            <option data-i18n="deptFinance">الشؤون المالية</option>
+            <option data-i18n="deptHR">الموارد البشرية</option>
+            <option data-i18n="deptAcademic">الشؤون الأكاديمية</option>
+            <option data-i18n="deptStudent">شؤون الطلاب</option>
+            <option data-i18n="deptFacilities">المرافق والصيانة</option>
+            <option data-i18n="deptProcurement">المشتريات والعقود</option>
+            <option data-i18n="deptLegal">الشؤون القانونية</option>
+            <option data-i18n="deptOther">أخرى</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lblCategory">التصنيف *</label>
+          <select id="fCategory">
+            <option value="" data-i18n="optSelect">-- اختر التصنيف --</option>
+            <option data-i18n="catSecurity">أمن المعلومات</option>
+            <option data-i18n="catInfra">البنية التحتية</option>
+            <option data-i18n="catData">البيانات</option>
+            <option data-i18n="catCompliance">الامتثال والحوكمة</option>
+            <option data-i18n="catOperations">التشغيل</option>
+            <option data-i18n="catFinancial">مالي</option>
+            <option data-i18n="catReputational">سمعة مؤسسية</option>
+            <option data-i18n="catOther">أخرى</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label data-i18n="lblDesc">الوصف</label>
+          <textarea id="fDesc" data-i18n-ph="phDesc"></textarea>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lblLikelihood">الاحتمالية (١ = نادر، ٥ = شبه مؤكد)</label>
+          <select id="fLikelihood" onchange="calcScore()">
+            <option value="" data-i18n="optSelect2">-- اختر --</option>
+            <option value="1" data-i18n="lik1">١ – نادر</option>
+            <option value="2" data-i18n="lik2">٢ – غير محتمل</option>
+            <option value="3" data-i18n="lik3">٣ – محتمل</option>
+            <option value="4" data-i18n="lik4">٤ – مرجّح</option>
+            <option value="5" data-i18n="lik5">٥ – شبه مؤكد</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lblImpact">الأثر (١ = طفيف، ٥ = كارثي)</label>
+          <select id="fImpact" onchange="calcScore()">
+            <option value="" data-i18n="optSelect2">-- اختر --</option>
+            <option value="1" data-i18n="imp1">١ – طفيف</option>
+            <option value="2" data-i18n="imp2">٢ – بسيط</option>
+            <option value="3" data-i18n="imp3">٣ – متوسط</option>
+            <option value="4" data-i18n="imp4">٤ – كبير</option>
+            <option value="5" data-i18n="imp5">٥ – كارثي</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lblOwner">مالك الخطر *</label>
+          <input type="text" id="fOwner" data-i18n-ph="phOwner"/>
+        </div>
+        <div class="form-group">
+          <div class="score-display">
+            <div class="score-val" id="scoreVal" style="color:#6b7280">—</div>
+            <div class="score-label" id="scoreLabel" data-i18n="scoreLabel">درجة الخطر (الاحتمالية × الأثر)</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lblResponse">الاستجابة للخطر</label>
+          <select id="fResponse" onchange="updatePlanLabel()">
+            <option value="" data-i18n="optSelectResp">-- اختر الاستجابة --</option>
+            <option data-i18n="respMitigate">تخفيف</option>
+            <option data-i18n="respAccept">قبول</option>
+            <option data-i18n="respTransfer">نقل</option>
+            <option data-i18n="respAvoid">تجنب</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label id="planLabel" data-i18n="planLabel">خطة المعالجة</label>
+          <textarea id="fMitigation" data-i18n-ph="phMitigation"></textarea>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="addRisk()" id="btnAdd" data-i18n="btnAdd">➕ إضافة خطر</button>
+        <button class="btn btn-secondary" onclick="clearForm()" data-i18n="btnClear">✕ مسح</button>
+      </div>
+      <div id="formError"></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-header"><span data-i18n="tableHeader">📋 جدول سجل المخاطر</span></div>
+    <div class="card-body">
+      <div class="actions-bar no-print">
+        <input class="filter-input" id="searchInput" data-i18n-ph="phSearch" oninput="renderTable()"/>
+        <select class="filter-input" id="filterDept" onchange="renderTable()" style="width:170px">
+          <option value="" data-i18n="allDepts">كل الإدارات</option>
+        </select>
+        <select class="filter-input" id="filterCat" onchange="renderTable()" style="width:160px">
+          <option value="" data-i18n="allCats">كل التصنيفات</option>
+        </select>
+        <select class="filter-input" id="filterSev" onchange="renderTable()" style="width:140px">
+          <option value="" data-i18n="allSev">كل المستويات</option>
+          <option value="Low" data-i18n="sevLow">منخفضة</option>
+          <option value="Medium" data-i18n="sevMedium">متوسطة</option>
+          <option value="High" data-i18n="sevHigh">مرتفعة</option>
+          <option value="Critical" data-i18n="sevCritical">حرجة</option>
+        </select>
+        <span class="spacer"></span>
+        <span id="rowCount" style="font-size:.8rem;color:var(--muted)"></span>
+        <button class="btn btn-success btn-sm" onclick="exportCSV()" data-i18n="btnExport">⬇ تصدير CSV</button>
+        <button class="btn btn-secondary btn-sm" onclick="window.print()" data-i18n="btnPrint">🖨 طباعة</button>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th data-i18n="thTitle">العنوان</th>
+              <th data-i18n="thDept">الإدارة</th>
+              <th data-i18n="thCategory">التصنيف</th>
+              <th data-i18n="thDesc">الوصف</th>
+              <th data-i18n="thLik">الاحتمالية</th>
+              <th data-i18n="thImp">الأثر</th>
+              <th data-i18n="thScore">الدرجة</th>
+              <th data-i18n="thSeverity">المستوى</th>
+              <th data-i18n="thOwner">المالك</th>
+              <th data-i18n="thResponse">الاستجابة</th>
+              <th data-i18n="thMitigation">خطة المعالجة</th>
+              <th class="no-print" data-i18n="thActions">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="riskTableBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display:none">
+          <div data-i18n="emptyMsg">لا توجد مخاطر مسجلة حتى الآن</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============ i18n ============ */
+const dict = {
+  ar:{
+    siteTitle:"سجل المخاطر المؤسسي", siteSub:"جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات",
+    navHint:"سجّل وتابع مخاطر إدارتك",
+    statTotal:"إجمالي المخاطر", statLow:"منخفضة / متوسطة", statHigh:"مرتفعة", statCritical:"حرجة",
+    formHeader:"➕ تسجيل خطر جديد",
+    lblTitle:"عنوان الخطر *", phTitle:"مثال: هجوم فدية على خوادم الملفات",
+    lblDept:"الإدارة / القسم *", optSelect:"-- اختر الإدارة --",
+    deptIT:"تقنية المعلومات", deptFinance:"الشؤون المالية", deptHR:"الموارد البشرية", deptAcademic:"الشؤون الأكاديمية",
+    deptStudent:"شؤون الطلاب", deptFacilities:"المرافق والصيانة", deptProcurement:"المشتريات والعقود", deptLegal:"الشؤون القانونية", deptOther:"أخرى",
+    lblCategory:"التصنيف *",
+    catSecurity:"أمن المعلومات", catInfra:"البنية التحتية", catData:"البيانات", catCompliance:"الامتثال والحوكمة",
+    catOperations:"التشغيل", catFinancial:"مالي", catReputational:"سمعة مؤسسية", catOther:"أخرى",
+    lblDesc:"الوصف", phDesc:"صف الخطر بالتفصيل...",
+    lblLikelihood:"الاحتمالية (١ = نادر، ٥ = شبه مؤكد)", optSelect2:"-- اختر --",
+    lik1:"١ – نادر", lik2:"٢ – غير محتمل", lik3:"٣ – محتمل", lik4:"٤ – مرجّح", lik5:"٥ – شبه مؤكد",
+    lblImpact:"الأثر (١ = طفيف، ٥ = كارثي)",
+    imp1:"١ – طفيف", imp2:"٢ – بسيط", imp3:"٣ – متوسط", imp4:"٤ – كبير", imp5:"٥ – كارثي",
+    lblOwner:"مالك الخطر *", phOwner:"مثال: فريق أمن الشبكات",
+    scoreLabel:"درجة الخطر (الاحتمالية × الأثر)",
+    lblResponse:"الاستجابة للخطر", optSelectResp:"-- اختر الاستجابة --",
+    respMitigate:"تخفيف", respAccept:"قبول", respTransfer:"نقل", respAvoid:"تجنب",
+    planLabel:"خطة المعالجة", phMitigation:"صف خطة المعالجة أو التعامل مع الخطر...",
+    btnAdd:"➕ إضافة خطر", btnClear:"✕ مسح",
+    errRequired:"⚠ يرجى تعبئة جميع الحقول المطلوبة (العنوان، الإدارة، التصنيف، الاحتمالية، الأثر، المالك).",
+    tableHeader:"📋 جدول سجل المخاطر",
+    phSearch:"🔍 بحث عن خطر...", allDepts:"كل الإدارات", allCats:"كل التصنيفات", allSev:"كل المستويات",
+    sevLow:"منخفضة", sevMedium:"متوسطة", sevHigh:"مرتفعة", sevCritical:"حرجة",
+    btnExport:"⬇ تصدير CSV", btnPrint:"🖨 طباعة",
+    thTitle:"العنوان", thDept:"الإدارة", thCategory:"التصنيف", thDesc:"الوصف", thLik:"الاحتمالية", thImp:"الأثر",
+    thScore:"الدرجة", thSeverity:"المستوى", thOwner:"المالك", thResponse:"الاستجابة", thMitigation:"خطة المعالجة", thActions:"إجراءات",
+    emptyMsg:"لا توجد مخاطر مسجلة حتى الآن",
+    editBtn:"✏ تعديل", delBtn:"🗑 حذف", saveBtn:"💾 حفظ التعديلات",
+    confirmDel:"هل تريد حذف هذا الخطر؟", noRisks:"لا توجد مخاطر للتصدير.",
+    showing:(n,t)=>`عرض ${n} من ${t} خطر`
+  },
+  en:{
+    siteTitle:"Institutional Risk Register", siteSub:"Sulaiman Al Rajhi University — ICT Executive Directorate",
+    navHint:"Register and track your department's risks",
+    statTotal:"Total Risks", statLow:"Low / Medium", statHigh:"High Risks", statCritical:"Critical Risks",
+    formHeader:"➕ Register New Risk",
+    lblTitle:"Risk Title *", phTitle:"e.g. Ransomware Attack on File Servers",
+    lblDept:"Department *", optSelect:"-- Select Department --",
+    deptIT:"IT", deptFinance:"Finance", deptHR:"Human Resources", deptAcademic:"Academic Affairs",
+    deptStudent:"Student Affairs", deptFacilities:"Facilities & Maintenance", deptProcurement:"Procurement & Contracts", deptLegal:"Legal Affairs", deptOther:"Other",
+    lblCategory:"Category *",
+    catSecurity:"Security", catInfra:"Infrastructure", catData:"Data", catCompliance:"Compliance & Governance",
+    catOperations:"Operations", catFinancial:"Financial", catReputational:"Reputational", catOther:"Other",
+    lblDesc:"Description", phDesc:"Describe the risk in detail...",
+    lblLikelihood:"Likelihood (1 = Rare, 5 = Almost Certain)", optSelect2:"-- Select --",
+    lik1:"1 – Rare", lik2:"2 – Unlikely", lik3:"3 – Possible", lik4:"4 – Likely", lik5:"5 – Almost Certain",
+    lblImpact:"Impact (1 = Negligible, 5 = Catastrophic)",
+    imp1:"1 – Negligible", imp2:"2 – Minor", imp3:"3 – Moderate", imp4:"4 – Major", imp5:"5 – Catastrophic",
+    lblOwner:"Risk Owner *", phOwner:"e.g. Network Security Team",
+    scoreLabel:"Risk Score (L × I)",
+    lblResponse:"Risk Response", optSelectResp:"-- Select Response --",
+    respMitigate:"Mitigate", respAccept:"Accept", respTransfer:"Transfer", respAvoid:"Avoid",
+    planLabel:"Mitigation Plan", phMitigation:"Describe the mitigation or treatment plan...",
+    btnAdd:"➕ Add Risk", btnClear:"✕ Clear",
+    errRequired:"⚠ Please fill in all required fields (Title, Department, Category, Likelihood, Impact, Owner).",
+    tableHeader:"📋 Risk Register Table",
+    phSearch:"🔍 Search risks...", allDepts:"All Departments", allCats:"All Categories", allSev:"All Severities",
+    sevLow:"Low", sevMedium:"Medium", sevHigh:"High", sevCritical:"Critical",
+    btnExport:"⬇ Export CSV", btnPrint:"🖨 Print",
+    thTitle:"Title", thDept:"Department", thCategory:"Category", thDesc:"Description", thLik:"Likelihood", thImp:"Impact",
+    thScore:"Score", thSeverity:"Severity", thOwner:"Owner", thResponse:"Response", thMitigation:"Mitigation Plan", thActions:"Actions",
+    emptyMsg:"No risks registered yet",
+    editBtn:"✏ Edit", delBtn:"🗑 Delete", saveBtn:"💾 Save Changes",
+    confirmDel:"Delete this risk entry?", noRisks:"No risks to export.",
+    showing:(n,t)=>`Showing ${n} of ${t} risk(s)`
+  }
+};
+
+let currentLang = localStorage.getItem('sriskregister_lang') || 'ar';
+
+function setLang(lang){
+  currentLang = lang;
+  localStorage.setItem('sriskregister_lang', lang);
+  const html = document.getElementById('htmlRoot');
+  html.lang = lang;
+  html.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.body.classList.toggle('sru-en', lang === 'en');
+  document.getElementById('btnAr').classList.toggle('active', lang==='ar');
+  document.getElementById('btnEn').classList.toggle('active', lang==='en');
+
+  const t = dict[lang];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(t[key] !== undefined && typeof t[key] === 'string') el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-ph');
+    if(t[key] !== undefined) el.placeholder = t[key];
+  });
+  populateDeptFilter();
+  populateCatFilter();
+  updatePlanLabel();
+  renderTable();
+}
+
+/* ============ Data & scoring ============ */
+let risks = JSON.parse(localStorage.getItem('sriskregister') || '[]');
+let editId = null;
+
+function scoreInfo(score){
+  if(score >= 15) return {label:'Critical', labelKey:'sevCritical', cls:'badge-critical', color:'#991b1b'};
+  if(score >= 10) return {label:'High', labelKey:'sevHigh', cls:'badge-high', color:'#9a3412'};
+  if(score >= 5)  return {label:'Medium', labelKey:'sevMedium', cls:'badge-medium', color:'#854d0e'};
+  return {label:'Low', labelKey:'sevLow', cls:'badge-low', color:'#166534'};
+}
+
+function calcScore(){
+  const l = +document.getElementById('fLikelihood').value;
+  const i = +document.getElementById('fImpact').value;
+  const el = document.getElementById('scoreVal');
+  const lbl = document.getElementById('scoreLabel');
+  const t = dict[currentLang];
+  if(l && i){
+    const s = l*i;
+    const info = scoreInfo(s);
+    el.textContent = s;
+    el.style.color = info.color;
+    lbl.textContent = `${t.scoreLabel} – ${t[info.labelKey]}`;
+  } else {
+    el.textContent = '—';
+    el.style.color = '#6b7280';
+    lbl.textContent = t.scoreLabel;
+  }
+}
+
+function updatePlanLabel(){
+  const response = document.getElementById('fResponse').value;
+  const planLabelEl = document.getElementById('planLabel');
+  const mitigationBox = document.getElementById('fMitigation');
+  const t = dict[currentLang];
+  if(response){
+    planLabelEl.textContent = currentLang === 'ar' ? `خطة ${response}` : `${response} Plan`;
+    mitigationBox.placeholder = currentLang === 'ar' ? `صف خطة ${response}...` : `Describe the ${response.toLowerCase()} plan...`;
+  } else {
+    planLabelEl.textContent = t.planLabel;
+    mitigationBox.placeholder = t.phMitigation;
+  }
+}
+
+function clearForm(){
+  ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  calcScore();
+  updatePlanLabel();
+  editId = null;
+  document.getElementById('btnAdd').textContent = dict[currentLang].btnAdd;
+  document.getElementById('formError').style.display='none';
+}
+
+function addRisk(){
+  const title = document.getElementById('fTitle').value.trim();
+  const dept = document.getElementById('fDept').value;
+  const cat = document.getElementById('fCategory').value;
+  const desc = document.getElementById('fDesc').value.trim();
+  const lik = document.getElementById('fLikelihood').value;
+  const imp = document.getElementById('fImpact').value;
+  const owner = document.getElementById('fOwner').value.trim();
+  const response = document.getElementById('fResponse').value;
+  const mit = document.getElementById('fMitigation').value.trim();
+  const err = document.getElementById('formError');
+  const t = dict[currentLang];
+
+  if(!title||!dept||!cat||!lik||!imp||!owner){
+    err.textContent = t.errRequired;
+    err.style.display='block';
+    return;
+  }
+  err.style.display='none';
+
+  const score = +lik * +imp;
+  const risk = {
+    id: editId || Date.now(),
+    title, dept, cat, desc, lik:+lik, imp:+imp, score, owner, response, mit,
+    date: editId ? (risks.find(r=>r.id===editId)||{}).date : new Date().toLocaleDateString('en-GB')
+  };
+
+  if(editId){
+    risks = risks.map(r => r.id===editId ? risk : r);
+    editId = null;
+    document.getElementById('btnAdd').textContent = t.btnAdd;
+  } else {
+    risks.push(risk);
+  }
+
+  localStorage.setItem('sriskregister', JSON.stringify(risks));
+  clearForm();
+  populateDeptFilter();
+  populateCatFilter();
+  renderTable();
+  updateStats();
+}
+
+function deleteRisk(id){
+  if(!confirm(dict[currentLang].confirmDel)) return;
+  risks = risks.filter(r=>r.id!==id);
+  localStorage.setItem('sriskregister', JSON.stringify(risks));
+  renderTable();
+  updateStats();
+}
+
+function editRisk(id){
+  const r = risks.find(r=>r.id===id);
+  if(!r) return;
+  document.getElementById('fTitle').value = r.title;
+  document.getElementById('fDept').value = r.dept || '';
+  document.getElementById('fCategory').value = r.cat;
+  document.getElementById('fDesc').value = r.desc;
+  document.getElementById('fLikelihood').value = r.lik;
+  document.getElementById('fImpact').value = r.imp;
+  document.getElementById('fOwner').value = r.owner;
+  document.getElementById('fResponse').value = r.response || '';
+  document.getElementById('fMitigation').value = r.mit;
+  calcScore();
+  updatePlanLabel();
+  editId = id;
+  document.getElementById('btnAdd').textContent = dict[currentLang].saveBtn;
+  document.querySelector('.card.no-print').scrollIntoView({behavior:'smooth'});
+}
+
+function populateDeptFilter(){
+  const sel = document.getElementById('filterDept');
+  const prev = sel.value;
+  const t = dict[currentLang];
+  const depts = [...new Set(risks.map(r=>r.dept).filter(Boolean))];
+  sel.innerHTML = `<option value="">${t.allDepts}</option>` + depts.map(d=>`<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+  sel.value = prev;
+}
+function populateCatFilter(){
+  const sel = document.getElementById('filterCat');
+  const prev = sel.value;
+  const t = dict[currentLang];
+  const cats = [...new Set(risks.map(r=>r.cat).filter(Boolean))];
+  sel.innerHTML = `<option value="">${t.allCats}</option>` + cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  sel.value = prev;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function renderTable(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const fd = document.getElementById('filterDept').value;
+  const fc = document.getElementById('filterCat').value;
+  const fs = document.getElementById('filterSev').value;
+  const tbody = document.getElementById('riskTableBody');
+  const empty = document.getElementById('emptyState');
+  const count = document.getElementById('rowCount');
+  const t = dict[currentLang];
+
+  let filtered = risks.filter(r => {
+    const matchQ = !q || (r.title||'').toLowerCase().includes(q) || (r.desc||'').toLowerCase().includes(q) || (r.owner||'').toLowerCase().includes(q);
+    const matchD = !fd || r.dept === fd;
+    const matchC = !fc || r.cat === fc;
+    const matchS = !fs || scoreInfo(r.score).label === fs;
+    return matchQ && matchD && matchC && matchS;
+  });
+
+  if(!filtered.length){
+    tbody.innerHTML = '';
+    empty.style.display='block';
+    count.textContent='';
+    return;
+  }
+  empty.style.display='none';
+  count.textContent = t.showing(filtered.length, risks.length);
+
+  tbody.innerHTML = filtered.map((r,i) => {
+    const info = scoreInfo(r.score);
+    return `<tr>
+      <td>${i+1}</td>
+      <td><strong>${escapeHtml(r.title)}</strong><br><span style="font-size:.72rem;color:#9ca3af">${escapeHtml(r.date||'')}</span></td>
+      <td><span class="badge badge-dept">${escapeHtml(r.dept||'—')}</span></td>
+      <td>${escapeHtml(r.cat)}</td>
+      <td style="max-width:190px;white-space:normal">${escapeHtml(r.desc)||'—'}</td>
+      <td style="text-align:center">${r.lik}</td>
+      <td style="text-align:center">${r.imp}</td>
+      <td style="text-align:center;font-weight:700;color:${info.color}">${r.score}</td>
+      <td><span class="badge ${info.cls}">${t[info.labelKey]}</span></td>
+      <td>${escapeHtml(r.owner)}</td>
+      <td>${escapeHtml(r.response)||'—'}</td>
+      <td style="max-width:190px;white-space:normal">${escapeHtml(r.mit)||'—'}</td>
+      <td class="no-print" style="white-space:nowrap">
+        <button class="btn btn-warning btn-sm" onclick="editRisk(${r.id})">${t.editBtn}</button>
+        <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteRisk(${r.id})">${t.delBtn}</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStats(){
+  const total = risks.length;
+  const low = risks.filter(r=>scoreInfo(r.score).label==='Low'||scoreInfo(r.score).label==='Medium').length;
+  const high = risks.filter(r=>scoreInfo(r.score).label==='High').length;
+  const crit = risks.filter(r=>scoreInfo(r.score).label==='Critical').length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statLow').textContent = low;
+  document.getElementById('statHigh').textContent = high;
+  document.getElementById('statCritical').textContent = crit;
+}
+
+function exportCSV(){
+  const t = dict[currentLang];
+  if(!risks.length){alert(t.noRisks);return;}
+  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,'Date'];
+  const rows = risks.map(r=>[
+    `"${(r.title||'').replace(/"/g,'""')}"`, `"${(r.dept||'').replace(/"/g,'""')}"`, `"${(r.cat||'').replace(/"/g,'""')}"`,
+    `"${(r.desc||'').replace(/"/g,'""')}"`, r.lik, r.imp, r.score, dict[currentLang][scoreInfo(r.score).labelKey],
+    `"${(r.owner||'').replace(/"/g,'""')}"`, `"${(r.response||'').replace(/"/g,'""')}"`, `"${(r.mit||'').replace(/"/g,'""')}"`, r.date
+  ]);
+  const csv = '\uFEFF' + [headers, ...rows].map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Risk_Register_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+/* Init */
+setLang(currentLang);
+updateStats();
+</script>
+</body>
+</html>
