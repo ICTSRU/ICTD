@@ -171,14 +171,6 @@
     <div class="card-body">
       <div class="form-grid">
         <div class="form-group">
-          <label data-i18n="lblSubmitterName">اسم مقدّم الطلب *</label>
-          <input type="text" id="fSubmitterName" data-i18n-ph="phSubmitterName"/>
-        </div>
-        <div class="form-group">
-          <label data-i18n="lblSubmitterEmail">البريد الإلكتروني *</label>
-          <input type="email" id="fSubmitterEmail" data-i18n-ph="phSubmitterEmail"/>
-        </div>
-        <div class="form-group">
           <label data-i18n="lblTitle">عنوان الخطر *</label>
           <input type="text" id="fTitle" data-i18n-ph="phTitle"/>
         </div>
@@ -390,8 +382,6 @@ const dict = {
     navHint:"سجّل وتابع مخاطر إدارتك",
     statTotal:"إجمالي المخاطر", statLow:"منخفضة / متوسطة", statHigh:"مرتفعة", statCritical:"حرجة",
     formHeader:"➕ تسجيل خطر جديد",
-    lblSubmitterName:"اسم مقدّم الطلب *", phSubmitterName:"الاسم الكامل",
-    lblSubmitterEmail:"البريد الإلكتروني *", phSubmitterEmail:"name@sr.edu.sa",
     lblTitle:"عنوان الخطر *", phTitle:"مثال: هجوم فدية على خوادم الملفات",
     lblDept:"الإدارة / القسم *", optSelect:"-- اختر الإدارة --",
     optSelectCat:"-- اختر التصنيف --",
@@ -411,8 +401,7 @@ const dict = {
     respMitigate:"تخفيف", respAccept:"قبول", respTransfer:"نقل", respAvoid:"تجنب",
     planLabel:"خطة المعالجة", phMitigation:"صف خطة المعالجة أو التعامل مع الخطر...",
     btnAdd:"➕ إضافة خطر", btnClear:"✕ مسح",
-    errRequired:"⚠ يرجى تعبئة جميع الحقول المطلوبة (الاسم، البريد الإلكتروني، العنوان، الإدارة، التصنيف، الاحتمالية، الأثر، المالك).",
-    errEmail:"⚠ يرجى إدخال بريد إلكتروني صحيح.",
+    errRequired:"⚠ يرجى تعبئة جميع الحقول المطلوبة (العنوان، الإدارة، التصنيف، الاحتمالية، الأثر، المالك).",
     tableHeader:"📋 جدول سجل المخاطر",
     phSearch:"🔍 بحث عن خطر...", allDepts:"كل الإدارات", allCats:"كل التصنيفات", allSev:"كل المستويات",
     sevLow:"منخفضة", sevMedium:"متوسطة", sevHigh:"مرتفعة", sevCritical:"حرجة",
@@ -443,8 +432,6 @@ const dict = {
     navHint:"Register and track your department's risks",
     statTotal:"Total Risks", statLow:"Low / Medium", statHigh:"High Risks", statCritical:"Critical Risks",
     formHeader:"➕ Register New Risk",
-    lblSubmitterName:"Submitter Name *", phSubmitterName:"Full name",
-    lblSubmitterEmail:"Email *", phSubmitterEmail:"name@sr.edu.sa",
     lblTitle:"Risk Title *", phTitle:"e.g. Ransomware Attack on File Servers",
     lblDept:"Department *", optSelect:"-- Select Department --",
     optSelectCat:"-- Select Category --",
@@ -464,8 +451,7 @@ const dict = {
     respMitigate:"Mitigate", respAccept:"Accept", respTransfer:"Transfer", respAvoid:"Avoid",
     planLabel:"Mitigation Plan", phMitigation:"Describe the mitigation or treatment plan...",
     btnAdd:"➕ Add Risk", btnClear:"✕ Clear",
-    errRequired:"⚠ Please fill in all required fields (Name, Email, Title, Department, Category, Likelihood, Impact, Owner).",
-    errEmail:"⚠ Please enter a valid email address.",
+    errRequired:"⚠ Please fill in all required fields (Title, Department, Category, Likelihood, Impact, Owner).",
     tableHeader:"📋 Risk Register Table",
     phSearch:"🔍 Search risks...", allDepts:"All Departments", allCats:"All Categories", allSev:"All Severities",
     sevLow:"Low", sevMedium:"Medium", sevHigh:"High", sevCritical:"Critical",
@@ -636,7 +622,7 @@ function updatePlanLabel(){
 }
 
 function clearForm(){
-  ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation','fReviewDate','fFramework','fEvidence','fSubmitterName','fSubmitterEmail'].forEach(id=>{
+  ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation','fReviewDate','fFramework','fEvidence'].forEach(id=>{
     document.getElementById(id).value = '';
   });
   document.getElementById('fStatus').selectedIndex = 0;
@@ -674,8 +660,6 @@ function ensureAccess(){
 
 async function addRisk(){
   if(!ensureAccess()) return;
-  const submitterName = document.getElementById('fSubmitterName').value.trim();
-  const submitterEmail = document.getElementById('fSubmitterEmail').value.trim();
   const title = document.getElementById('fTitle').value.trim();
   const dept = document.getElementById('fDept').value;
   const cat = document.getElementById('fCategory').value;
@@ -692,14 +676,8 @@ async function addRisk(){
   const err = document.getElementById('formError');
   const t = dict[currentLang];
 
-  if(!submitterName||!title||!dept||!cat||!lik||!imp||!owner){
+  if(!title||!dept||!cat||!lik||!imp||!owner){
     err.textContent = t.errRequired;
-    err.style.display='block';
-    return;
-  }
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if(!submitterEmail || !emailPattern.test(submitterEmail)){
-    err.textContent = t.errEmail;
     err.style.display='block';
     return;
   }
@@ -709,7 +687,6 @@ async function addRisk(){
   const risk = {
     id: editId || Date.now(),
     title, dept, cat, desc, lik:+lik, imp:+imp, score, owner, response, mit, status, reviewDate, framework, evidenceUrl,
-    submitterName, submitterEmail,
     date: editId ? (risks.find(r=>r.id===editId)||{}).date : new Date().toLocaleDateString('en-GB')
   };
 
@@ -769,8 +746,6 @@ function editRisk(id){
   if(!ensureAccess()) return;
   const r = risks.find(r=>r.id===id);
   if(!r) return;
-  document.getElementById('fSubmitterName').value = '';
-  document.getElementById('fSubmitterEmail').value = '';
   document.getElementById('fTitle').value = r.title;
   document.getElementById('fDept').value = r.dept || '';
   document.getElementById('fCategory').value = r.cat;
@@ -867,7 +842,7 @@ function renderTable(){
       <td>${r.reviewDate ? `<span style="${isOverdue(r.reviewDate) ? 'color:#dc2626;font-weight:700' : ''}">${escapeHtml(r.reviewDate)}${isOverdue(r.reviewDate) ? ' ⚠' : ''}</span>` : '—'}</td>
       <td>${escapeHtml(r.framework)||'—'}</td>
       <td>${r.evidenceUrl ? `<a href="${escapeHtml(r.evidenceUrl)}" target="_blank" rel="noopener" style="color:var(--blue)">${t.evidenceLink}</a>` : '—'}</td>
-      <td style="font-size:.74rem;color:var(--muted)">${escapeHtml(r.submitterName)||'—'}${r.submitterEmail ? `<br><a href="mailto:${escapeHtml(r.submitterEmail)}" style="color:var(--blue)">${escapeHtml(r.submitterEmail)}</a>` : ''}</td>
+      <td style="font-size:.74rem;color:var(--muted)">${escapeHtml(r.submittedBy)||'—'}</td>
       <td class="no-print" style="white-space:nowrap">
         <button class="btn btn-warning btn-sm" onclick="editRisk(${r.id})">${t.editBtn}</button>
         <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteRisk(${r.id})">${t.delBtn}</button>
@@ -929,12 +904,12 @@ function renderDashboard(){
 function exportCSV(){
   const t = dict[currentLang];
   if(!risks.length){alert(t.noRisks);return;}
-  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,t.thStatus,t.thReviewDate,t.thFramework,t.thEvidence,t.thSubmittedBy,'Email','Date'];
+  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,t.thStatus,t.thReviewDate,t.thFramework,t.thEvidence,t.thSubmittedBy,'Date'];
   const rows = risks.map(r=>[
     `"${(r.title||'').replace(/"/g,'""')}"`, `"${(r.dept||'').replace(/"/g,'""')}"`, `"${(r.cat||'').replace(/"/g,'""')}"`,
     `"${(r.desc||'').replace(/"/g,'""')}"`, r.lik, r.imp, r.score, dict[currentLang][scoreInfo(r.score).labelKey],
     `"${(r.owner||'').replace(/"/g,'""')}"`, `"${(r.response||'').replace(/"/g,'""')}"`, `"${(r.mit||'').replace(/"/g,'""')}"`,
-    `"${(r.status||'New').replace(/"/g,'""')}"`, r.reviewDate || '', `"${(r.framework||'').replace(/"/g,'""')}"`, r.evidenceUrl || '', `"${(r.submitterName||'').replace(/"/g,'""')}"`, r.submitterEmail || '', r.date
+    `"${(r.status||'New').replace(/"/g,'""')}"`, r.reviewDate || '', `"${(r.framework||'').replace(/"/g,'""')}"`, r.evidenceUrl || '', `"${(r.submittedBy||'').replace(/"/g,'""')}"`, r.date
   ]);
   const csv = '\uFEFF' + [headers, ...rows].map(r=>r.join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
