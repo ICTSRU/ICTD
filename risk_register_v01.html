@@ -99,6 +99,21 @@
 
   #formError{color:#dc2626;font-size:.83rem;margin-top:8px;display:none}
 
+  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .dash-title{font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:10px}
+  .heatmap{display:grid;grid-template-columns:auto repeat(5,1fr);gap:3px;max-width:420px}
+  .heatmap .hm-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:3px;font-size:.78rem;font-weight:700;color:#fff}
+  .heatmap .hm-axis{display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--muted);font-weight:700}
+  .bar-chart{display:flex;flex-direction:column;gap:8px}
+  .bar-row{display:flex;align-items:center;gap:8px;font-size:.78rem}
+  .bar-row .bar-label{width:120px;flex-shrink:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-row .bar-track{flex:1;background:var(--bg);border-radius:3px;height:16px;overflow:hidden}
+  .bar-row .bar-fill{height:100%;background:var(--purple);border-radius:3px;min-width:2px}
+  .bar-row .bar-count{width:24px;text-align:end;font-weight:700}
+  @media(max-width:760px){
+    .dash-grid{grid-template-columns:1fr}
+  }
+
   @media print{
     .topbar,.navbar,.sru-diag{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .no-print{display:none!important}
@@ -250,6 +265,21 @@
           <label data-i18n="lblReviewDate">تاريخ المراجعة القادمة</label>
           <input type="date" id="fReviewDate"/>
         </div>
+        <div class="form-group">
+          <label data-i18n="lblFramework">الإطار المرجعي</label>
+          <select id="fFramework">
+            <option value="" data-i18n="optSelectFw">-- اختر (اختياري) --</option>
+            <option>ISO 31000</option>
+            <option>NCA ECC</option>
+            <option>PDPL</option>
+            <option>NDMO</option>
+            <option>NCAAA</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label data-i18n="lblEvidence">رابط المرفقات / الأدلة</label>
+          <input type="url" id="fEvidence" data-i18n-ph="phEvidence"/>
+        </div>
       </div>
       <div style="margin-top:16px;display:flex;gap:10px">
         <button class="btn btn-primary" onclick="addRisk()" id="btnAdd" data-i18n="btnAdd">➕ إضافة خطر</button>
@@ -309,6 +339,8 @@
               <th data-i18n="thMitigation">خطة المعالجة</th>
               <th data-i18n="thStatus">الحالة</th>
               <th data-i18n="thReviewDate">تاريخ المراجعة</th>
+              <th data-i18n="thFramework">الإطار</th>
+              <th data-i18n="thEvidence">أدلة</th>
               <th class="no-print" data-i18n="thActions">إجراءات</th>
             </tr>
           </thead>
@@ -316,6 +348,23 @@
         </table>
         <div class="empty-state" id="emptyState" style="display:none">
           <div data-i18n="emptyMsg">لا توجد مخاطر مسجلة حتى الآن</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="card">
+    <div class="card-header"><span data-i18n="dashHeader">📊 لوحة المخاطر</span></div>
+    <div class="card-body">
+      <div class="dash-grid">
+        <div>
+          <div class="dash-title" data-i18n="heatmapTitle">مصفوفة الحرارة (الاحتمالية × الأثر)</div>
+          <div id="heatmap" class="heatmap"></div>
+        </div>
+        <div>
+          <div class="dash-title" data-i18n="byDeptTitle">المخاطر حسب الإدارة</div>
+          <div id="deptChart" class="bar-chart"></div>
         </div>
       </div>
     </div>
@@ -367,7 +416,12 @@ const dict = {
     syncNone:"لم يتم ضبط رابط جوجل شيت — يتم الحفظ محلياً فقط", syncSending:"جاري الإرسال...",
     lblStatus:"الحالة", statusNew:"جديد", statusReview:"قيد المراجعة", statusApproved:"معتمد", statusClosed:"مغلق",
     lblReviewDate:"تاريخ المراجعة القادمة", allStatus:"كل الحالات",
-    thStatus:"الحالة", thReviewDate:"تاريخ المراجعة", overdue:"متأخر"
+    thStatus:"الحالة", thReviewDate:"تاريخ المراجعة", overdue:"متأخر",
+    lblFramework:"الإطار المرجعي", optSelectFw:"-- اختر (اختياري) --",
+    lblEvidence:"رابط المرفقات / الأدلة", phEvidence:"https://drive.google.com/...",
+    thFramework:"الإطار", thEvidence:"أدلة", evidenceLink:"عرض",
+    dashHeader:"📊 لوحة المخاطر", heatmapTitle:"مصفوفة الحرارة (الاحتمالية × الأثر)", byDeptTitle:"المخاطر حسب الإدارة",
+    axisImpact:"الأثر", axisLikelihood:"الاحتمالية"
   },
   en:{
     siteTitle:"Institutional Risk Register", siteSub:"Sulaiman Al Rajhi University — ICT Executive Directorate",
@@ -410,7 +464,12 @@ const dict = {
     syncNone:"No Google Sheet URL set — saving locally only", syncSending:"Sending...",
     lblStatus:"Status", statusNew:"New", statusReview:"Under Review", statusApproved:"Approved", statusClosed:"Closed",
     lblReviewDate:"Next Review Date", allStatus:"All Statuses",
-    thStatus:"Status", thReviewDate:"Review Date", overdue:"Overdue"
+    thStatus:"Status", thReviewDate:"Review Date", overdue:"Overdue",
+    lblFramework:"Framework Reference", optSelectFw:"-- Select (optional) --",
+    lblEvidence:"Evidence / Attachment Link", phEvidence:"https://drive.google.com/...",
+    thFramework:"Framework", thEvidence:"Evidence", evidenceLink:"View",
+    dashHeader:"📊 Risk Dashboard", heatmapTitle:"Heat Map (Likelihood × Impact)", byDeptTitle:"Risks by Department",
+    axisImpact:"Impact", axisLikelihood:"Likelihood"
   }
 };
 
@@ -537,7 +596,7 @@ function updatePlanLabel(){
 }
 
 function clearForm(){
-  ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation','fReviewDate'].forEach(id=>{
+  ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation','fReviewDate','fFramework','fEvidence'].forEach(id=>{
     document.getElementById(id).value = '';
   });
   document.getElementById('fStatus').selectedIndex = 0;
@@ -560,6 +619,8 @@ async function addRisk(){
   const mit = document.getElementById('fMitigation').value.trim();
   const status = document.getElementById('fStatus').value;
   const reviewDate = document.getElementById('fReviewDate').value;
+  const framework = document.getElementById('fFramework').value;
+  const evidenceUrl = document.getElementById('fEvidence').value.trim();
   const err = document.getElementById('formError');
   const t = dict[currentLang];
 
@@ -573,7 +634,7 @@ async function addRisk(){
   const score = +lik * +imp;
   const risk = {
     id: editId || Date.now(),
-    title, dept, cat, desc, lik:+lik, imp:+imp, score, owner, response, mit, status, reviewDate,
+    title, dept, cat, desc, lik:+lik, imp:+imp, score, owner, response, mit, status, reviewDate, framework, evidenceUrl,
     date: editId ? (risks.find(r=>r.id===editId)||{}).date : new Date().toLocaleDateString('en-GB')
   };
 
@@ -642,6 +703,8 @@ function editRisk(id){
   document.getElementById('fMitigation').value = r.mit;
   document.getElementById('fStatus').value = r.status || 'New';
   document.getElementById('fReviewDate').value = r.reviewDate || '';
+  document.getElementById('fFramework').value = r.framework || '';
+  document.getElementById('fEvidence').value = r.evidenceUrl || '';
   calcScore();
   updatePlanLabel();
   editId = id;
@@ -723,6 +786,8 @@ function renderTable(){
       <td style="max-width:190px;white-space:normal">${escapeHtml(r.mit)||'—'}</td>
       <td><span class="badge badge-dept">${escapeHtml(r.status || 'New')}</span></td>
       <td>${r.reviewDate ? `<span style="${isOverdue(r.reviewDate) ? 'color:#dc2626;font-weight:700' : ''}">${escapeHtml(r.reviewDate)}${isOverdue(r.reviewDate) ? ' ⚠' : ''}</span>` : '—'}</td>
+      <td>${escapeHtml(r.framework)||'—'}</td>
+      <td>${r.evidenceUrl ? `<a href="${escapeHtml(r.evidenceUrl)}" target="_blank" rel="noopener" style="color:var(--blue)">${t.evidenceLink}</a>` : '—'}</td>
       <td class="no-print" style="white-space:nowrap">
         <button class="btn btn-warning btn-sm" onclick="editRisk(${r.id})">${t.editBtn}</button>
         <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteRisk(${r.id})">${t.delBtn}</button>
@@ -740,17 +805,56 @@ function updateStats(){
   document.getElementById('statLow').textContent = low;
   document.getElementById('statHigh').textContent = high;
   document.getElementById('statCritical').textContent = crit;
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const t = dict[currentLang];
+
+  // Heat map: rows = impact (5 down to 1), cols = likelihood (1 to 5)
+  const counts = {};
+  risks.forEach(r=>{
+    const key = `${r.lik}-${r.imp}`;
+    counts[key] = (counts[key]||0) + 1;
+  });
+  let html = `<div class="hm-axis"></div>`;
+  for(let l=1;l<=5;l++) html += `<div class="hm-axis">${l}</div>`;
+  for(let i=5;i>=1;i--){
+    html += `<div class="hm-axis">${i}</div>`;
+    for(let l=1;l<=5;l++){
+      const score = l*i;
+      const info = scoreInfo(score);
+      const n = counts[`${l}-${i}`] || 0;
+      html += `<div class="hm-cell" style="background:${info.color};opacity:${n?1:0.25}">${n||''}</div>`;
+    }
+  }
+  document.getElementById('heatmap').innerHTML = html;
+
+  // Bar chart by department
+  const deptCounts = {};
+  risks.forEach(r=>{
+    const d = r.dept || '—';
+    deptCounts[d] = (deptCounts[d]||0) + 1;
+  });
+  const maxCount = Math.max(1, ...Object.values(deptCounts));
+  const entries = Object.entries(deptCounts).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('deptChart').innerHTML = entries.length ? entries.map(([dept,n])=>`
+    <div class="bar-row">
+      <div class="bar-label" title="${escapeHtml(dept)}">${escapeHtml(dept)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(n/maxCount*100)}%"></div></div>
+      <div class="bar-count">${n}</div>
+    </div>`).join('') : `<div style="color:var(--muted);font-size:.8rem">—</div>`;
 }
 
 function exportCSV(){
   const t = dict[currentLang];
   if(!risks.length){alert(t.noRisks);return;}
-  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,t.thStatus,t.thReviewDate,'Date'];
+  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,t.thStatus,t.thReviewDate,t.thFramework,t.thEvidence,'Date'];
   const rows = risks.map(r=>[
     `"${(r.title||'').replace(/"/g,'""')}"`, `"${(r.dept||'').replace(/"/g,'""')}"`, `"${(r.cat||'').replace(/"/g,'""')}"`,
     `"${(r.desc||'').replace(/"/g,'""')}"`, r.lik, r.imp, r.score, dict[currentLang][scoreInfo(r.score).labelKey],
     `"${(r.owner||'').replace(/"/g,'""')}"`, `"${(r.response||'').replace(/"/g,'""')}"`, `"${(r.mit||'').replace(/"/g,'""')}"`,
-    `"${(r.status||'New').replace(/"/g,'""')}"`, r.reviewDate || '', r.date
+    `"${(r.status||'New').replace(/"/g,'""')}"`, r.reviewDate || '', `"${(r.framework||'').replace(/"/g,'""')}"`, r.evidenceUrl || '', r.date
   ]);
   const csv = '\uFEFF' + [headers, ...rows].map(r=>r.join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
