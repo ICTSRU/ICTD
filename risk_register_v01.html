@@ -33,6 +33,11 @@
   .lang-switch{margin-inline-start:auto;display:flex;gap:6px}
   .lang-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 14px;border-radius:var(--radius);font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
   .lang-btn.active{background:#fff;color:var(--purple-dark)}
+  .cfg-bar{background:var(--blue-light);border-bottom:1px solid var(--border);padding:8px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.8rem}
+  .cfg-bar input{flex:1;min-width:220px;max-width:520px;border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;font-size:.8rem;font-family:inherit}
+  .sync-status{font-size:.76rem;color:var(--muted)}
+  .sync-status.err{color:#dc2626;font-weight:700}
+  .sync-status.ok{color:#16a34a}
 
   .sru-diag{height:5px;background:linear-gradient(90deg,var(--blue),var(--purple));width:100%}
 
@@ -124,6 +129,15 @@
   </div>
 </div>
 <div class="sru-diag"></div>
+<div class="cfg-bar no-print" id="cfgBar" style="justify-content:flex-end">
+  <span class="sync-status" id="syncStatus"></span>
+  <a href="#" onclick="toggleCfg();return false;" style="font-size:.76rem;color:var(--purple)" data-i18n="cfgToggle">⚙ إعدادات الاتصال</a>
+</div>
+<div class="cfg-bar no-print" id="cfgBarFull" style="display:none">
+  <span data-i18n="cfgLabel">رابط جوجل شيت (Web App URL):</span>
+  <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/XXXXX/exec"/>
+  <button class="btn btn-primary btn-sm" onclick="saveApiUrl()" data-i18n="cfgSave">حفظ</button>
+</div>
 
 <div class="container">
 
@@ -162,7 +176,7 @@
         <div class="form-group">
           <label data-i18n="lblCategory">التصنيف *</label>
           <select id="fCategory">
-            <option value="" data-i18n="optSelect">-- اختر التصنيف --</option>
+            <option value="" data-i18n="optSelectCat">-- اختر التصنيف --</option>
             <option data-i18n="catSecurity">أمن المعلومات</option>
             <option data-i18n="catInfra">البنية التحتية</option>
             <option data-i18n="catData">البيانات</option>
@@ -297,6 +311,7 @@ const dict = {
     formHeader:"➕ تسجيل خطر جديد",
     lblTitle:"عنوان الخطر *", phTitle:"مثال: هجوم فدية على خوادم الملفات",
     lblDept:"الإدارة / القسم *", optSelect:"-- اختر الإدارة --",
+    optSelectCat:"-- اختر التصنيف --",
     deptIT:"تقنية المعلومات", deptFinance:"الشؤون المالية", deptHR:"الموارد البشرية", deptAcademic:"الشؤون الأكاديمية",
     deptStudent:"شؤون الطلاب", deptFacilities:"المرافق والصيانة", deptProcurement:"المشتريات والعقود", deptLegal:"الشؤون القانونية", deptOther:"أخرى",
     lblCategory:"التصنيف *",
@@ -323,7 +338,11 @@ const dict = {
     emptyMsg:"لا توجد مخاطر مسجلة حتى الآن",
     editBtn:"✏ تعديل", delBtn:"🗑 حذف", saveBtn:"💾 حفظ التعديلات",
     confirmDel:"هل تريد حذف هذا الخطر؟", noRisks:"لا توجد مخاطر للتصدير.",
-    showing:(n,t)=>`عرض ${n} من ${t} خطر`
+    showing:(n,t)=>`عرض ${n} من ${t} خطر`,
+    cfgLabel:"رابط جوجل شيت (Web App URL):", cfgSave:"حفظ", cfgToggle:"⚙ إعدادات الاتصال",
+    syncSaved:"تم الحفظ. جاري التحميل...", syncLoading:"جاري التحميل من الشيت...",
+    syncOk:"متصل بجوجل شيت ✓", syncErr:"تعذر الاتصال بجوجل شيت — تحقق من الرابط",
+    syncNone:"لم يتم ضبط رابط جوجل شيت — يتم الحفظ محلياً فقط", syncSending:"جاري الإرسال..."
   },
   en:{
     siteTitle:"Institutional Risk Register", siteSub:"Sulaiman Al Rajhi University — ICT Executive Directorate",
@@ -332,6 +351,7 @@ const dict = {
     formHeader:"➕ Register New Risk",
     lblTitle:"Risk Title *", phTitle:"e.g. Ransomware Attack on File Servers",
     lblDept:"Department *", optSelect:"-- Select Department --",
+    optSelectCat:"-- Select Category --",
     deptIT:"IT", deptFinance:"Finance", deptHR:"Human Resources", deptAcademic:"Academic Affairs",
     deptStudent:"Student Affairs", deptFacilities:"Facilities & Maintenance", deptProcurement:"Procurement & Contracts", deptLegal:"Legal Affairs", deptOther:"Other",
     lblCategory:"Category *",
@@ -358,7 +378,11 @@ const dict = {
     emptyMsg:"No risks registered yet",
     editBtn:"✏ Edit", delBtn:"🗑 Delete", saveBtn:"💾 Save Changes",
     confirmDel:"Delete this risk entry?", noRisks:"No risks to export.",
-    showing:(n,t)=>`Showing ${n} of ${t} risk(s)`
+    showing:(n,t)=>`Showing ${n} of ${t} risk(s)`,
+    cfgLabel:"Google Sheet Web App URL:", cfgSave:"Save", cfgToggle:"⚙ Connection settings",
+    syncSaved:"Saved. Loading...", syncLoading:"Loading from sheet...",
+    syncOk:"Connected to Google Sheet ✓", syncErr:"Could not connect — check the URL",
+    syncNone:"No Google Sheet URL set — saving locally only", syncSending:"Sending..."
   }
 };
 
@@ -390,8 +414,59 @@ function setLang(lang){
 }
 
 /* ============ Data & scoring ============ */
-let risks = JSON.parse(localStorage.getItem('sriskregister') || '[]');
+let risks = [];
 let editId = null;
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxLjZjnOyJEx7JxihJv6WoErc6DmC1wfGAFiNvR78BCHcOoVc3sWQyX0d2D75jWvfBZ/exec';
+let API_URL = localStorage.getItem('sriskregister_apiurl') || DEFAULT_API_URL;
+
+function setSyncStatus(key, cls){
+  const el = document.getElementById('syncStatus');
+  el.textContent = dict[currentLang][key] || '';
+  el.className = 'sync-status' + (cls ? ' ' + cls : '');
+}
+
+function toggleCfg(){
+  const el = document.getElementById('cfgBarFull');
+  el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+}
+
+function saveApiUrl(){
+  const val = document.getElementById('apiUrlInput').value.trim();
+  API_URL = val;
+  localStorage.setItem('sriskregister_apiurl', val);
+  setSyncStatus('syncSaved');
+  loadRisks();
+}
+
+async function loadRisks(){
+  if(!API_URL){
+    // fallback: local-only mode
+    risks = JSON.parse(localStorage.getItem('sriskregister') || '[]');
+    setSyncStatus('syncNone');
+    populateDeptFilter();
+    populateCatFilter();
+    renderTable();
+    updateStats();
+    return;
+  }
+  setSyncStatus('syncLoading');
+  try{
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    if(data.ok){
+      risks = (data.risks || []).map(r => ({...r, lik:+r.lik, imp:+r.imp, score:+r.score, id:r.id}));
+      setSyncStatus('syncOk','ok');
+    } else {
+      setSyncStatus('syncErr','err');
+    }
+  } catch(e){
+    setSyncStatus('syncErr','err');
+  }
+  populateDeptFilter();
+  populateCatFilter();
+  renderTable();
+  updateStats();
+}
 
 function scoreInfo(score){
   if(score >= 15) return {label:'Critical', labelKey:'sevCritical', cls:'badge-critical', color:'#991b1b'};
@@ -444,7 +519,7 @@ function clearForm(){
   document.getElementById('formError').style.display='none';
 }
 
-function addRisk(){
+async function addRisk(){
   const title = document.getElementById('fTitle').value.trim();
   const dept = document.getElementById('fDept').value;
   const cat = document.getElementById('fCategory').value;
@@ -471,28 +546,55 @@ function addRisk(){
     date: editId ? (risks.find(r=>r.id===editId)||{}).date : new Date().toLocaleDateString('en-GB')
   };
 
-  if(editId){
-    risks = risks.map(r => r.id===editId ? risk : r);
+  if(!API_URL){
+    // local-only fallback
+    if(editId){
+      risks = risks.map(r => r.id===editId ? risk : r);
+    } else {
+      risks.push(risk);
+    }
+    localStorage.setItem('sriskregister', JSON.stringify(risks));
     editId = null;
     document.getElementById('btnAdd').textContent = t.btnAdd;
-  } else {
-    risks.push(risk);
+    clearForm();
+    populateDeptFilter();
+    populateCatFilter();
+    renderTable();
+    updateStats();
+    return;
   }
 
-  localStorage.setItem('sriskregister', JSON.stringify(risks));
-  clearForm();
-  populateDeptFilter();
-  populateCatFilter();
-  renderTable();
-  updateStats();
+  setSyncStatus('syncSending');
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(editId ? {...risk, action:'update'} : risk)
+    });
+    editId = null;
+    document.getElementById('btnAdd').textContent = t.btnAdd;
+    clearForm();
+    await loadRisks();
+  } catch(e){
+    setSyncStatus('syncErr','err');
+  }
 }
 
-function deleteRisk(id){
+async function deleteRisk(id){
   if(!confirm(dict[currentLang].confirmDel)) return;
-  risks = risks.filter(r=>r.id!==id);
-  localStorage.setItem('sriskregister', JSON.stringify(risks));
-  renderTable();
-  updateStats();
+  if(!API_URL){
+    risks = risks.filter(r=>r.id!==id);
+    localStorage.setItem('sriskregister', JSON.stringify(risks));
+    renderTable();
+    updateStats();
+    return;
+  }
+  setSyncStatus('syncSending');
+  try{
+    await fetch(`${API_URL}?action=delete&id=${encodeURIComponent(id)}`);
+    await loadRisks();
+  } catch(e){
+    setSyncStatus('syncErr','err');
+  }
 }
 
 function editRisk(id){
@@ -614,8 +716,9 @@ function exportCSV(){
 }
 
 /* Init */
+document.getElementById('apiUrlInput').value = API_URL;
 setLang(currentLang);
-updateStats();
+loadRisks();
 </script>
 </body>
 </html>
