@@ -5,13 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>سجل المخاطر | Risk Register – SRU</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-  /* ============================================================
-     SRU UI Kit — عُدّة الهوية الرقمية (مُطبَّقة من sru-ui.css)
-     جامعة سليمان الراجحي · إدارة التحول الرقمي
-     ============================================================ */
   :root{
     --sru-purple:#501e8c; --sru-purple-dark:#3a1464; --sru-purple-light:#f0ebf8;
     --sru-blue:#0a6eaa;   --sru-blue-light:#e6f3fa;
@@ -81,7 +77,7 @@
     box-shadow:0 2px 12px rgba(80,30,140,.06);margin-bottom:22px;overflow:hidden;
     transition:box-shadow .2s ease}
   .sru-card:hover{box-shadow:0 6px 20px rgba(80,30,140,.1)}
-  .sru-card-header{background:var(--sru-purple-light);color:var(--sru-purple-dark);padding:14px 20px;font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--sru-border)}
+  .sru-card-header{background:var(--sru-purple-light);color:var(--sru-purple-dark);padding:14px 20px;font-weight:800;font-size:1rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--sru-border)}
   .sru-card-body{padding:22px}
 
   /* ---------- الوسم (chip) ---------- */
@@ -89,7 +85,7 @@
     padding:3px 12px;border-radius:20px;font-size:13px;font-weight:600}
 
   /* ---------- الحقول ---------- */
-  .sru-field label{display:block;font-size:13px;font-weight:700;margin-bottom:5px;color:var(--sru-muted)}
+  .sru-field label{display:block;font-size:13px;font-weight:900;margin-bottom:5px;color:var(--sru-ink)}
   label.required::after{content:" *";color:#dc2626;font-weight:800}
   .sru-field input,.sru-field select,.sru-field textarea{width:100%;padding:9px 11px;
     border:1px solid var(--sru-border);border-radius:var(--sru-radius);font-family:inherit;
@@ -100,7 +96,7 @@
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .form-group{display:flex;flex-direction:column;gap:6px}
   .form-group.full{grid-column:1/-1}
-  label{font-size:.8rem;font-weight:700;color:var(--sru-muted)}
+  label{font-size:.8rem;font-weight:900;color:var(--sru-ink)}
   input,select,textarea{border:1.5px solid var(--sru-border);border-radius:var(--sru-radius);padding:9px 12px;font-size:.88rem;font-family:inherit;width:100%;color:var(--sru-ink);background:#fff;transition:border-color .15s ease,box-shadow .15s ease}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sru-blue);box-shadow:0 0 0 3px rgba(10,110,170,.15)}
   textarea{resize:vertical;min-height:70px}
@@ -115,7 +111,7 @@
 
   table{width:100%;border-collapse:collapse;font-size:.82rem}
   thead tr{background:var(--sru-purple)}
-  thead th{padding:12px 9px;text-align:start;font-weight:700;color:#fff;white-space:nowrap;
+  thead th{padding:12px 9px;text-align:start;font-weight:800;color:#fff;white-space:nowrap;
     position:sticky;top:0;z-index:1;background:var(--sru-purple)}
   tbody tr{border-bottom:1px solid var(--sru-border);transition:background-color .12s ease}
   tbody tr:nth-child(even){background:#fbfaff}
@@ -141,12 +137,12 @@
   .stat-card.critical{border-top-color:#dc2626}
   .stat-icon{font-size:1.3rem;margin-bottom:4px;opacity:.85}
   .stat-val{font-size:2rem;font-weight:800;color:var(--sru-ink)}
-  .stat-lbl{font-size:.76rem;color:var(--sru-muted);margin-top:4px;font-weight:600}
+  .stat-lbl{font-size:.76rem;color:var(--sru-muted);margin-top:4px;font-weight:800}
 
   #formError{color:#dc2626;font-size:.83rem;margin-top:8px;display:none}
 
   .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-  .dash-title{font-size:.82rem;font-weight:700;color:var(--sru-muted);margin-bottom:10px}
+  .dash-title{font-size:.82rem;font-weight:800;color:var(--sru-muted);margin-bottom:10px}
   .heatmap{display:grid;grid-template-columns:auto repeat(5,1fr);gap:3px;max-width:420px;flex:1}
   .heatmap .hm-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:.78rem;font-weight:700;color:#fff;transition:transform .12s ease}
   .heatmap .hm-cell:hover{transform:scale(1.08)}
@@ -463,7 +459,7 @@
 const dict = {
   ar:{
     siteTitle:"سجل المخاطر المؤسسي", siteSub:"جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات",
-    navHint:"سجّل وتابع مخاطر 14إدارتك",
+    navHint:"سجّل وتابع مخاطر إدارتك",
     statTotal:"إجمالي المخاطر", statLow:"منخفضة / متوسطة", statHigh:"مرتفعة", statCritical:"حرجة",
     formHeader:"➕ تسجيل خطر جديد",
     lblSubmitterName:"اسم مقدّم الطلب", phSubmitterName:"الاسم الكامل",
