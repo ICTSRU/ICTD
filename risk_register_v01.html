@@ -182,8 +182,8 @@
 <div class="sru-topbar">
   <div class="sru-logo"><span class="sru-en">SRU</span></div>
   <div class="titles">
-    <h1 class="sru-title" style="color:#fff" data-i18n="siteTitle">سجل المخاطر المؤسسي</h1>
-    <p data-i18n="siteSub">جامعة سليمان الراجحي — 01الإدارة التنفيذية للاتصالات وتقنية المعلومات</p>
+    <h1 class="sru-title" style="color:#fff" data-i18n="siteTitle">11سجل المخاطر المؤسسي</h1>
+    <p data-i18n="siteSub">جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات</p>
   </div>
 </div>
 <div class="sru-navbar no-print">
@@ -960,6 +960,7 @@ function populateCatFilter(){
 }
 
 function escapeHtml(s){
+  if(s === undefined || s === null) return '';
   return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
