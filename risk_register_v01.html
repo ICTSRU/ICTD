@@ -6,175 +6,244 @@
 <title>سجل المخاطر | Risk Register – SRU</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
+  /* ============================================================
+     SRU UI Kit — عُدّة الهوية الرقمية (مُطبَّقة من sru-ui.css)
+     جامعة سليمان الراجحي · إدارة التحول الرقمي
+     ============================================================ */
   :root{
-    --purple:#501e8c;
-    --purple-dark:#3a1464;
-    --purple-light:#f0ebf8;
-    --blue:#0a6eaa;
-    --blue-light:#e6f3fa;
-    --bg:#f7f5fb;
-    --border:rgba(80,30,140,0.12);
-    --ink:#241436;
-    --muted:#6b5a80;
-    --radius:4px;
+    --sru-purple:#501e8c; --sru-purple-dark:#3a1464; --sru-purple-light:#f0ebf8;
+    --sru-blue:#0a6eaa;   --sru-blue-light:#e6f3fa;
+    --sru-bg:#f7f5fb;     --sru-border:rgba(80,30,140,.12);
+    --sru-ink:#241436;    --sru-muted:#6b5a80;   --sru-radius:4px;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Cairo','Tahoma',Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
-  .sru-en{direction:ltr;unicode-bidi:isolate}
+  *{box-sizing:border-box}
+  *{margin:0;padding:0}
+  body.sru{margin:0;font-family:"Cairo","Tahoma",Arial,sans-serif;background:var(--sru-bg);
+    color:var(--sru-ink);line-height:1.65;direction:rtl;min-height:100vh}
+  /* Page requires a live Arabic/English toggle, so direction follows <html dir="">
+     instead of the kit's static rtl — the only intentional deviation from sru-ui.css. */
+  body.sru{direction:inherit}
 
-  /* Header */
-  .topbar{background:var(--purple-dark);color:#fff;padding:14px 28px;display:flex;align-items:center;gap:16px}
-  .topbar .logo-badge{width:46px;height:46px;background:#fff;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--purple-dark);font-size:16px;flex-shrink:0}
-  .topbar .titles{flex:1}
-  .topbar h1{font-size:1.15rem;font-weight:700}
-  .topbar p{font-size:.78rem;opacity:.85;margin-top:2px}
-  .navbar{background:var(--purple);color:#fff;padding:8px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .lang-switch{margin-inline-start:auto;display:flex;gap:6px}
-  .lang-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 14px;border-radius:var(--radius);font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
-  .lang-btn.active{background:#fff;color:var(--purple-dark)}
-  .cfg-bar{background:var(--blue-light);border-bottom:1px solid var(--border);padding:8px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.8rem}
-  .cfg-bar input{flex:1;min-width:220px;max-width:520px;border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;font-size:.8rem;font-family:inherit}
-  .sync-status{font-size:.76rem;color:var(--muted)}
+  /* أداة عزل المصطلح الإنجليزي داخل نص عربي (RTL سليم) */
+  .sru-en{unicode-bidi:isolate;direction:ltr;display:inline-block}
+
+  .sru-container{max-width:1320px;margin:0 auto;padding:24px 20px}
+
+  /* ---------- الهيدر: topbar + navbar ---------- */
+  .sru-topbar{background:linear-gradient(135deg,var(--sru-purple-dark),#2c0f4d);color:#fff;padding:16px 28px;
+    display:flex;align-items:center;justify-content:flex-start;gap:16px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  .sru-topbar .sru-logo{background:#fff;border-radius:6px;padding:6px 12px;display:inline-flex;
+    align-items:center;justify-content:center;font-weight:900;color:var(--sru-purple-dark);font-size:17px;flex-shrink:0;
+    box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  .sru-topbar .titles{flex:1}
+  .sru-topbar h1{font-size:1.25rem;font-weight:800;letter-spacing:.2px}
+  .sru-topbar p{font-size:.8rem;opacity:.82;margin-top:3px}
+  .sru-navbar{background:var(--sru-purple);color:#fff;padding:8px 28px;display:flex;gap:6px;
+    align-items:center;flex-wrap:wrap;overflow-x:auto}
+  .lang-switch{margin-inline-start:auto;display:flex;gap:2px}
+  .sru-nav-item{background:none;border:none;color:rgba(255,255,255,.85);font-family:inherit;
+    font-size:14px;font-weight:600;padding:8px 16px;cursor:pointer;white-space:nowrap;
+    border-bottom:3px solid transparent;border-radius:0;transition:color .15s ease,border-color .15s ease}
+  .sru-nav-item:hover{color:#fff}
+  .sru-nav-item.active{color:#fff;border-bottom-color:var(--sru-blue)}
+  .cfg-bar{background:var(--sru-blue-light);border-bottom:1px solid var(--sru-border);padding:8px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.8rem}
+  .cfg-bar input{flex:1;min-width:220px;max-width:520px;border:1px solid var(--sru-border);border-radius:var(--sru-radius);padding:6px 10px;font-size:.8rem;font-family:inherit}
+  .sync-status{font-size:.76rem;color:var(--sru-muted)}
   .sync-status.err{color:#dc2626;font-weight:700}
   .sync-status.ok{color:#16a34a}
 
-  .sru-diag{height:5px;background:linear-gradient(90deg,var(--blue),var(--purple));width:100%}
+  /* ---------- التوقيع البصري: الشريط القُطري ---------- */
+  .sru-diag{width:92px;height:6px;background:var(--sru-blue);margin:8px 28px;
+    clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,0 100%)}
 
-  .container{max-width:1320px;margin:0 auto;padding:24px 20px}
-  .card{background:#fff;border-radius:8px;border:1px solid var(--border);box-shadow:0 2px 12px rgba(80,30,140,.06);margin-bottom:22px;overflow:hidden}
-  .card-header{background:var(--purple-light);color:var(--purple-dark);padding:13px 18px;font-weight:700;font-size:.92rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
-  .card-body{padding:20px}
+  /* ---------- العناوين ---------- */
+  .sru-title{font-weight:800;color:var(--sru-purple);margin:0}
+
+  /* ---------- الأزرار ---------- */
+  .sru-btn{font-family:inherit;font-weight:700;font-size:14px;border-radius:var(--sru-radius);
+    padding:9px 18px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;
+    transition:transform .12s ease,box-shadow .12s ease,background-color .15s ease}
+  .sru-btn:hover{transform:translateY(-1px)}
+  .sru-btn:active{transform:translateY(0)}
+  .sru-btn-primary{background:var(--sru-purple);color:#fff;box-shadow:0 2px 6px rgba(80,30,140,.25)}
+  .sru-btn-primary:hover{background:var(--sru-purple-dark);box-shadow:0 4px 10px rgba(80,30,140,.35)}
+  .sru-btn-secondary{background:#fff;color:var(--sru-purple);border:1px solid var(--sru-purple)}
+  .sru-btn-secondary:hover{background:var(--sru-purple-light)}
+  .sru-btn-success{background:#16a34a;color:#fff;box-shadow:0 2px 6px rgba(22,163,74,.25)}
+  .sru-btn-warning{background:#d97706;color:#fff;box-shadow:0 2px 6px rgba(217,119,6,.25)}
+  .sru-btn-danger{background:#dc2626;color:#fff;box-shadow:0 2px 6px rgba(220,38,38,.25)}
+  .sru-btn-sm{padding:5px 10px;font-size:.76rem}
+
+  /* ---------- البطاقة ---------- */
+  .sru-card{background:#fff;border:1px solid var(--sru-border);border-radius:10px;
+    box-shadow:0 2px 12px rgba(80,30,140,.06);margin-bottom:22px;overflow:hidden;
+    transition:box-shadow .2s ease}
+  .sru-card:hover{box-shadow:0 6px 20px rgba(80,30,140,.1)}
+  .sru-card-header{background:var(--sru-purple-light);color:var(--sru-purple-dark);padding:14px 20px;font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--sru-border)}
+  .sru-card-body{padding:22px}
+
+  /* ---------- الوسم (chip) ---------- */
+  .sru-chip{display:inline-block;background:var(--sru-purple-light);color:var(--sru-purple);
+    padding:3px 12px;border-radius:20px;font-size:13px;font-weight:600}
+
+  /* ---------- الحقول ---------- */
+  .sru-field label{display:block;font-size:13px;font-weight:700;margin-bottom:5px;color:var(--sru-muted)}
+  label.required::after{content:" *";color:#dc2626;font-weight:800}
+  .sru-field input,.sru-field select,.sru-field textarea{width:100%;padding:9px 11px;
+    border:1px solid var(--sru-border);border-radius:var(--sru-radius);font-family:inherit;
+    font-size:14px;background:#fff;color:var(--sru-ink);transition:border-color .15s ease,box-shadow .15s ease}
+  .sru-field input:focus,.sru-field select:focus,.sru-field textarea:focus{
+    outline:none;border-color:var(--sru-blue);box-shadow:0 0 0 3px rgba(10,110,170,.15)}
 
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .form-group{display:flex;flex-direction:column;gap:6px}
   .form-group.full{grid-column:1/-1}
-  label{font-size:.8rem;font-weight:700;color:var(--muted)}
-  input,select,textarea{border:1.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:.88rem;font-family:inherit;width:100%;color:var(--ink);background:#fff}
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px rgba(80,30,140,.1)}
+  label{font-size:.8rem;font-weight:700;color:var(--sru-muted)}
+  input,select,textarea{border:1.5px solid var(--sru-border);border-radius:var(--sru-radius);padding:9px 12px;font-size:.88rem;font-family:inherit;width:100%;color:var(--sru-ink);background:#fff;transition:border-color .15s ease,box-shadow .15s ease}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sru-blue);box-shadow:0 0 0 3px rgba(10,110,170,.15)}
   textarea{resize:vertical;min-height:70px}
 
-  .score-display{background:var(--bg);border:2px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;margin-top:2px}
+  .score-display{background:var(--sru-bg);border:2px solid var(--sru-border);border-radius:var(--sru-radius);padding:12px;text-align:center;margin-top:2px}
   .score-display .score-val{font-size:2rem;font-weight:800}
-  .score-display .score-label{font-size:.76rem;color:var(--muted);margin-top:2px}
-
-  .btn{padding:10px 18px;border:none;border-radius:var(--radius);font-size:.85rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
-  .btn-primary{background:var(--purple);color:#fff}
-  .btn-primary:hover{background:var(--purple-dark)}
-  .btn-secondary{background:#fff;color:var(--purple);border:1px solid var(--purple)}
-  .btn-secondary:hover{background:var(--purple-light)}
-  .btn-success{background:#16a34a;color:#fff}
-  .btn-warning{background:#d97706;color:#fff}
-  .btn-danger{background:#dc2626;color:#fff}
-  .btn-sm{padding:5px 10px;font-size:.76rem}
+  .score-display .score-label{font-size:.76rem;color:var(--sru-muted);margin-top:2px}
 
   .actions-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
   .actions-bar .spacer{flex:1}
-  .filter-input{border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:.85rem;width:210px;font-family:inherit}
+  .filter-input{border:1.5px solid var(--sru-border);border-radius:var(--sru-radius);padding:8px 12px;font-size:.85rem;width:210px;font-family:inherit}
 
   table{width:100%;border-collapse:collapse;font-size:.82rem}
-  thead tr{background:var(--purple)}
-  thead th{padding:11px 9px;text-align:start;font-weight:700;color:#fff;white-space:nowrap}
-  tbody tr{border-bottom:1px solid var(--border)}
-  tbody tr:hover{background:var(--blue-light)}
-  tbody td{padding:10px 9px;vertical-align:top}
+  thead tr{background:var(--sru-purple)}
+  thead th{padding:12px 9px;text-align:start;font-weight:700;color:#fff;white-space:nowrap;
+    position:sticky;top:0;z-index:1;background:var(--sru-purple)}
+  tbody tr{border-bottom:1px solid var(--sru-border);transition:background-color .12s ease}
+  tbody tr:nth-child(even){background:#fbfaff}
+  tbody tr:hover{background:var(--sru-blue-light)}
+  tbody td{padding:11px 9px;vertical-align:top}
 
-  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.73rem;font-weight:700;white-space:nowrap}
+  .badge{display:inline-block;padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:800;white-space:nowrap;letter-spacing:.2px}
   .badge-low{background:#dcfce7;color:#166534}
   .badge-medium{background:#fef9c3;color:#854d0e}
   .badge-high{background:#fed7aa;color:#9a3412}
   .badge-critical{background:#fee2e2;color:#991b1b}
-  .badge-dept{background:var(--blue-light);color:var(--blue);border-radius:var(--radius)}
 
-  .empty-state{text-align:center;padding:44px 20px;color:#9ca3af}
+  .empty-state{text-align:center;padding:56px 20px;color:#9ca3af}
+  .empty-state .empty-icon{font-size:2.4rem;margin-bottom:10px;opacity:.6}
 
   .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-  .stat-card{background:#fff;border-radius:8px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(80,30,140,.06);border-top:4px solid;border-color:var(--border)}
-  .stat-card.total{border-top-color:var(--purple)}
+  .stat-card{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 2px 8px rgba(80,30,140,.06);border-top:4px solid;border-color:var(--sru-border);
+    transition:transform .15s ease,box-shadow .15s ease}
+  .stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(80,30,140,.12)}
+  .stat-card.total{border-top-color:var(--sru-purple)}
   .stat-card.low{border-top-color:#16a34a}
   .stat-card.high{border-top-color:#d97706}
   .stat-card.critical{border-top-color:#dc2626}
-  .stat-val{font-size:1.8rem;font-weight:800;color:var(--ink)}
-  .stat-lbl{font-size:.74rem;color:var(--muted);margin-top:4px}
+  .stat-icon{font-size:1.3rem;margin-bottom:4px;opacity:.85}
+  .stat-val{font-size:2rem;font-weight:800;color:var(--sru-ink)}
+  .stat-lbl{font-size:.76rem;color:var(--sru-muted);margin-top:4px;font-weight:600}
 
   #formError{color:#dc2626;font-size:.83rem;margin-top:8px;display:none}
 
   .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-  .dash-title{font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:10px}
+  .dash-title{font-size:.82rem;font-weight:700;color:var(--sru-muted);margin-bottom:10px}
   .heatmap{display:grid;grid-template-columns:auto repeat(5,1fr);gap:3px;max-width:420px}
-  .heatmap .hm-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:3px;font-size:.78rem;font-weight:700;color:#fff}
-  .heatmap .hm-axis{display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--muted);font-weight:700}
+  .heatmap .hm-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:.78rem;font-weight:700;color:#fff;transition:transform .12s ease}
+  .heatmap .hm-cell:hover{transform:scale(1.08)}
+  .heatmap .hm-axis{display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--sru-muted);font-weight:700}
+  .heatmap-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:.72rem;color:var(--sru-muted)}
+  .heatmap-legend span{display:inline-flex;align-items:center;gap:4px}
+  .heatmap-legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
   .bar-chart{display:flex;flex-direction:column;gap:8px}
   .bar-row{display:flex;align-items:center;gap:8px;font-size:.78rem}
-  .bar-row .bar-label{width:120px;flex-shrink:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .bar-row .bar-track{flex:1;background:var(--bg);border-radius:3px;height:16px;overflow:hidden}
-  .bar-row .bar-fill{height:100%;background:var(--purple);border-radius:3px;min-width:2px}
+  .bar-row .bar-label{width:120px;flex-shrink:0;color:var(--sru-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-row .bar-track{flex:1;background:var(--sru-bg);border-radius:3px;height:16px;overflow:hidden}
+  .bar-row .bar-fill{height:100%;background:var(--sru-purple);border-radius:3px;min-width:2px}
   .bar-row .bar-count{width:24px;text-align:end;font-weight:700}
   @media(max-width:760px){
     .dash-grid{grid-template-columns:1fr}
   }
 
   @media print{
-    .topbar,.navbar,.sru-diag{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .sru-topbar,.sru-navbar,.sru-diag{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .no-print{display:none!important}
-    .card{box-shadow:none;border:1px solid #e5e7eb}
-    body{background:#fff}
+    .sru-card{box-shadow:none;border:1px solid #e5e7eb}
+    body.sru{background:#fff}
   }
   @media(max-width:760px){
     .form-grid{grid-template-columns:1fr}
     .stats-row{grid-template-columns:1fr 1fr}
-    .topbar,.navbar{padding:12px 16px}
+    .sru-topbar,.sru-navbar{padding:12px 16px}
   }
 </style>
 </head>
-<body>
+<body class="sru">
 
-<div class="topbar">
-  <div class="logo-badge">SRU</div>
+<div class="sru-topbar">
+  <div class="sru-logo"><span class="sru-en">SRU</span></div>
   <div class="titles">
-    <h1 data-i18n="siteTitle">سجل المخاطر المؤسسي</h1>
+    <h1 class="sru-title" style="color:#fff" data-i18n="siteTitle">سجل المخاطر المؤسسي</h1>
     <p data-i18n="siteSub">جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات</p>
   </div>
 </div>
-<div class="navbar no-print">
+<div class="sru-navbar no-print">
   <span data-i18n="navHint" style="font-size:.8rem;opacity:.9">سجّل وتابع مخاطر إدارتك</span>
   <div class="lang-switch">
-    <button class="lang-btn" id="btnAr" onclick="setLang('ar')">العربية</button>
-    <button class="lang-btn" id="btnEn" onclick="setLang('en')">English</button>
+    <button class="sru-nav-item" id="btnAr" onclick="setLang('ar')">العربية</button>
+    <button class="sru-nav-item" id="btnEn" onclick="setLang('en')"><span class="sru-en">English</span></button>
   </div>
 </div>
 <div class="sru-diag"></div>
+<div class="cfg-bar no-print" id="signinGate" style="background:#fff7ed;border-bottom:1px solid #fed7aa">
+  <span data-i18n="signinRequired">للإضافة أو التعديل، يرجى تسجيل الدخول بحساب الجامعة (@sr.edu.sa):</span>
+  <div id="googleSignInBtn"></div>
+</div>
+<div class="cfg-bar no-print" id="signedInBar" style="display:none;background:#f0fdf4;border-bottom:1px solid #bbf7d0">
+  <span data-i18n="signedInAsUni">مسجّل الدخول:</span>
+  <strong id="signedInEmail"></strong>
+  <span class="spacer" style="flex:1"></span>
+  <button class="sru-btn sru-btn-secondary sru-btn-sm" onclick="signOutUser()" data-i18n="btnSignOut">تسجيل الخروج</button>
+</div>
 <div class="cfg-bar no-print" id="cfgBar" style="justify-content:flex-end">
+  <span class="sync-status" id="whoamiStatus"></span>
   <span class="sync-status" id="syncStatus"></span>
-  <a href="#" onclick="toggleCfg();return false;" style="font-size:.76rem;color:var(--purple)" data-i18n="cfgToggle">⚙ إعدادات الاتصال</a>
+  <a href="#" onclick="toggleCfg();return false;" style="font-size:.76rem;color:var(--sru-purple)" data-i18n="cfgToggle">⚙ إعدادات الاتصال</a>
 </div>
 <div class="cfg-bar no-print" id="cfgBarFull" style="display:none">
   <span data-i18n="cfgLabel">رابط جوجل شيت (Web App URL):</span>
   <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/XXXXX/exec"/>
-  <button class="btn btn-primary btn-sm" onclick="saveApiUrl()" data-i18n="cfgSave">حفظ</button>
+  <button class="sru-btn sru-btn-primary sru-btn-sm" onclick="saveApiUrl()" data-i18n="cfgSave">حفظ</button>
 </div>
 
-<div class="container">
+<div class="sru-container">
 
   <!-- Stats -->
   <div class="stats-row" id="statsRow">
-    <div class="stat-card total"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl" data-i18n="statTotal">إجمالي المخاطر</div></div>
-    <div class="stat-card low"><div class="stat-val" id="statLow">0</div><div class="stat-lbl" data-i18n="statLow">منخفضة / متوسطة</div></div>
-    <div class="stat-card high"><div class="stat-val" id="statHigh">0</div><div class="stat-lbl" data-i18n="statHigh">مرتفعة</div></div>
-    <div class="stat-card critical"><div class="stat-val" id="statCritical">0</div><div class="stat-lbl" data-i18n="statCritical">حرجة</div></div>
+    <div class="stat-card total"><div class="stat-icon">📋</div><div class="stat-val" id="statTotal">0</div><div class="stat-lbl" data-i18n="statTotal">إجمالي المخاطر</div></div>
+    <div class="stat-card low"><div class="stat-icon">🟢</div><div class="stat-val" id="statLow">0</div><div class="stat-lbl" data-i18n="statLow">منخفضة / متوسطة</div></div>
+    <div class="stat-card high"><div class="stat-icon">🟠</div><div class="stat-val" id="statHigh">0</div><div class="stat-lbl" data-i18n="statHigh">مرتفعة</div></div>
+    <div class="stat-card critical"><div class="stat-icon">🔴</div><div class="stat-val" id="statCritical">0</div><div class="stat-lbl" data-i18n="statCritical">حرجة</div></div>
   </div>
 
   <!-- Form -->
-  <div class="card no-print">
-    <div class="card-header"><span data-i18n="formHeader">➕ تسجيل خطر جديد</span></div>
-    <div class="card-body">
+  <div class="sru-card no-print">
+    <div class="sru-card-header"><span class="sru-title" style="font-size:inherit" data-i18n="formHeader">➕ تسجيل خطر جديد</span></div>
+    <div class="sru-card-body">
       <div class="form-grid">
-        <div class="form-group">
-          <label data-i18n="lblTitle">عنوان الخطر *</label>
+        <div class="form-group sru-field">
+          <label class="required" data-i18n="lblSubmitterName">اسم مقدّم الطلب</label>
+          <input type="text" id="fSubmitterName" data-i18n-ph="phSubmitterName"/>
+        </div>
+        <div class="form-group sru-field">
+          <label class="required" data-i18n="lblSubmitterEmail">البريد الإلكتروني</label>
+          <input type="email" id="fSubmitterEmail" data-i18n-ph="phSubmitterEmail"/>
+        </div>
+        <div class="form-group sru-field">
+          <label class="required" data-i18n="lblTitle">عنوان الخطر</label>
           <input type="text" id="fTitle" data-i18n-ph="phTitle"/>
         </div>
-        <div class="form-group">
-          <label data-i18n="lblDept">الإدارة / القسم *</label>
+        <div class="form-group sru-field">
+          <label class="required" data-i18n="lblDept">الإدارة / القسم</label>
           <select id="fDept">
             <option value="" data-i18n="optSelect">-- اختر الإدارة --</option>
             <option data-i18n="deptIT">تقنية المعلومات</option>
@@ -188,8 +257,8 @@
             <option data-i18n="deptOther">أخرى</option>
           </select>
         </div>
-        <div class="form-group">
-          <label data-i18n="lblCategory">التصنيف *</label>
+        <div class="form-group sru-field">
+          <label class="required" data-i18n="lblCategory">التصنيف</label>
           <select id="fCategory">
             <option value="" data-i18n="optSelectCat">-- اختر التصنيف --</option>
             <option data-i18n="catSecurity">أمن المعلومات</option>
@@ -202,11 +271,11 @@
             <option data-i18n="catOther">أخرى</option>
           </select>
         </div>
-        <div class="form-group full">
+        <div class="form-group full sru-field">
           <label data-i18n="lblDesc">الوصف</label>
           <textarea id="fDesc" data-i18n-ph="phDesc"></textarea>
         </div>
-        <div class="form-group">
+        <div class="form-group sru-field">
           <label data-i18n="lblLikelihood">الاحتمالية (١ = نادر، ٥ = شبه مؤكد)</label>
           <select id="fLikelihood" onchange="calcScore()">
             <option value="" data-i18n="optSelect2">-- اختر --</option>
@@ -217,7 +286,7 @@
             <option value="5" data-i18n="lik5">٥ – شبه مؤكد</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group sru-field">
           <label data-i18n="lblImpact">الأثر (١ = طفيف، ٥ = كارثي)</label>
           <select id="fImpact" onchange="calcScore()">
             <option value="" data-i18n="optSelect2">-- اختر --</option>
@@ -228,17 +297,17 @@
             <option value="5" data-i18n="imp5">٥ – كارثي</option>
           </select>
         </div>
-        <div class="form-group">
-          <label data-i18n="lblOwner">مالك الخطر *</label>
+        <div class="form-group sru-field">
+          <label class="required" data-i18n="lblOwner">مالك الخطر</label>
           <input type="text" id="fOwner" data-i18n-ph="phOwner"/>
         </div>
-        <div class="form-group">
+        <div class="form-group sru-field">
           <div class="score-display">
             <div class="score-val" id="scoreVal" style="color:#6b7280">—</div>
             <div class="score-label" id="scoreLabel" data-i18n="scoreLabel">درجة الخطر (الاحتمالية × الأثر)</div>
           </div>
         </div>
-        <div class="form-group">
+        <div class="form-group sru-field">
           <label data-i18n="lblResponse">الاستجابة للخطر</label>
           <select id="fResponse" onchange="updatePlanLabel()">
             <option value="" data-i18n="optSelectResp">-- اختر الاستجابة --</option>
@@ -248,11 +317,11 @@
             <option data-i18n="respAvoid">تجنب</option>
           </select>
         </div>
-        <div class="form-group full">
+        <div class="form-group full sru-field">
           <label id="planLabel" data-i18n="planLabel">خطة المعالجة</label>
           <textarea id="fMitigation" data-i18n-ph="phMitigation"></textarea>
         </div>
-        <div class="form-group">
+        <div class="form-group sru-field">
           <label data-i18n="lblStatus">الحالة</label>
           <select id="fStatus">
             <option data-i18n="statusNew">جديد</option>
@@ -261,11 +330,11 @@
             <option data-i18n="statusClosed">مغلق</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group sru-field">
           <label data-i18n="lblReviewDate">تاريخ المراجعة القادمة</label>
           <input type="date" id="fReviewDate"/>
         </div>
-        <div class="form-group">
+        <div class="form-group sru-field">
           <label data-i18n="lblFramework">الإطار المرجعي</label>
           <select id="fFramework">
             <option value="" data-i18n="optSelectFw">-- اختر (اختياري) --</option>
@@ -276,23 +345,23 @@
             <option>NCAAA</option>
           </select>
         </div>
-        <div class="form-group full">
+        <div class="form-group full sru-field">
           <label data-i18n="lblEvidence">رابط المرفقات / الأدلة</label>
           <input type="url" id="fEvidence" data-i18n-ph="phEvidence"/>
         </div>
       </div>
       <div style="margin-top:16px;display:flex;gap:10px">
-        <button class="btn btn-primary" onclick="addRisk()" id="btnAdd" data-i18n="btnAdd">➕ إضافة خطر</button>
-        <button class="btn btn-secondary" onclick="clearForm()" data-i18n="btnClear">✕ مسح</button>
+        <button class="sru-btn sru-btn-primary" onclick="addRisk()" id="btnAdd" data-i18n="btnAdd">➕ إضافة خطر</button>
+        <button class="sru-btn sru-btn-secondary" onclick="clearForm()" data-i18n="btnClear">✕ مسح</button>
       </div>
       <div id="formError"></div>
     </div>
   </div>
 
   <!-- Table -->
-  <div class="card">
-    <div class="card-header"><span data-i18n="tableHeader">📋 جدول سجل المخاطر</span></div>
-    <div class="card-body">
+  <div class="sru-card">
+    <div class="sru-card-header"><span class="sru-title" style="font-size:inherit" data-i18n="tableHeader">📋 جدول سجل المخاطر</span></div>
+    <div class="sru-card-body">
       <div class="actions-bar no-print">
         <input class="filter-input" id="searchInput" data-i18n-ph="phSearch" oninput="renderTable()"/>
         <select class="filter-input" id="filterDept" onchange="renderTable()" style="width:170px">
@@ -316,12 +385,12 @@
           <option data-i18n="statusClosed">مغلق</option>
         </select>
         <span class="spacer"></span>
-        <span id="rowCount" style="font-size:.8rem;color:var(--muted)"></span>
-        <button class="btn btn-success btn-sm" onclick="exportCSV()" data-i18n="btnExport">⬇ تصدير CSV</button>
-        <button class="btn btn-secondary btn-sm" onclick="window.print()" data-i18n="btnPrint">🖨 طباعة</button>
+        <span id="rowCount" style="font-size:.8rem;color:var(--sru-muted)"></span>
+        <button class="sru-btn sru-btn-success sru-btn-sm" onclick="exportCSV()" data-i18n="btnExport">⬇ تصدير CSV</button>
+        <button class="sru-btn sru-btn-secondary sru-btn-sm" onclick="window.print()" data-i18n="btnPrint">🖨 طباعة</button>
       </div>
 
-      <div style="overflow-x:auto">
+      <div style="overflow:auto;max-height:560px;border-radius:6px">
         <table>
           <thead>
             <tr>
@@ -341,12 +410,14 @@
               <th data-i18n="thReviewDate">تاريخ المراجعة</th>
               <th data-i18n="thFramework">الإطار</th>
               <th data-i18n="thEvidence">أدلة</th>
+              <th data-i18n="thSubmittedBy">مقدّم الطلب</th>
               <th class="no-print" data-i18n="thActions">إجراءات</th>
             </tr>
           </thead>
           <tbody id="riskTableBody"></tbody>
         </table>
         <div class="empty-state" id="emptyState" style="display:none">
+          <div class="empty-icon">🗂️</div>
           <div data-i18n="emptyMsg">لا توجد مخاطر مسجلة حتى الآن</div>
         </div>
       </div>
@@ -354,13 +425,19 @@
   </div>
 
   <!-- Dashboard -->
-  <div class="card">
-    <div class="card-header"><span data-i18n="dashHeader">📊 لوحة المخاطر</span></div>
-    <div class="card-body">
+  <div class="sru-card">
+    <div class="sru-card-header"><span class="sru-title" style="font-size:inherit" data-i18n="dashHeader">📊 لوحة المخاطر</span></div>
+    <div class="sru-card-body">
       <div class="dash-grid">
         <div>
           <div class="dash-title" data-i18n="heatmapTitle">مصفوفة الحرارة (الاحتمالية × الأثر)</div>
           <div id="heatmap" class="heatmap"></div>
+          <div class="heatmap-legend">
+            <span><i style="background:#166534"></i><span data-i18n="sevLow">منخفضة</span></span>
+            <span><i style="background:#854d0e"></i><span data-i18n="sevMedium">متوسطة</span></span>
+            <span><i style="background:#9a3412"></i><span data-i18n="sevHigh">مرتفعة</span></span>
+            <span><i style="background:#991b1b"></i><span data-i18n="sevCritical">حرجة</span></span>
+          </div>
         </div>
         <div>
           <div class="dash-title" data-i18n="byDeptTitle">المخاطر حسب الإدارة</div>
@@ -380,12 +457,14 @@ const dict = {
     navHint:"سجّل وتابع مخاطر إدارتك",
     statTotal:"إجمالي المخاطر", statLow:"منخفضة / متوسطة", statHigh:"مرتفعة", statCritical:"حرجة",
     formHeader:"➕ تسجيل خطر جديد",
-    lblTitle:"عنوان الخطر *", phTitle:"مثال: هجوم فدية على خوادم الملفات",
-    lblDept:"الإدارة / القسم *", optSelect:"-- اختر الإدارة --",
+    lblSubmitterName:"اسم مقدّم الطلب", phSubmitterName:"الاسم الكامل",
+    lblSubmitterEmail:"البريد الإلكتروني", phSubmitterEmail:"name@sr.edu.sa",
+    lblTitle:"عنوان الخطر", phTitle:"مثال: هجوم فدية على خوادم الملفات",
+    lblDept:"الإدارة / القسم", optSelect:"-- اختر الإدارة --",
     optSelectCat:"-- اختر التصنيف --",
     deptIT:"تقنية المعلومات", deptFinance:"الشؤون المالية", deptHR:"الموارد البشرية", deptAcademic:"الشؤون الأكاديمية",
     deptStudent:"شؤون الطلاب", deptFacilities:"المرافق والصيانة", deptProcurement:"المشتريات والعقود", deptLegal:"الشؤون القانونية", deptOther:"أخرى",
-    lblCategory:"التصنيف *",
+    lblCategory:"التصنيف",
     catSecurity:"أمن المعلومات", catInfra:"البنية التحتية", catData:"البيانات", catCompliance:"الامتثال والحوكمة",
     catOperations:"التشغيل", catFinancial:"مالي", catReputational:"سمعة مؤسسية", catOther:"أخرى",
     lblDesc:"الوصف", phDesc:"صف الخطر بالتفصيل...",
@@ -393,13 +472,14 @@ const dict = {
     lik1:"١ – نادر", lik2:"٢ – غير محتمل", lik3:"٣ – محتمل", lik4:"٤ – مرجّح", lik5:"٥ – شبه مؤكد",
     lblImpact:"الأثر (١ = طفيف، ٥ = كارثي)",
     imp1:"١ – طفيف", imp2:"٢ – بسيط", imp3:"٣ – متوسط", imp4:"٤ – كبير", imp5:"٥ – كارثي",
-    lblOwner:"مالك الخطر *", phOwner:"مثال: فريق أمن الشبكات",
+    lblOwner:"مالك الخطر", phOwner:"مثال: فريق أمن الشبكات",
     scoreLabel:"درجة الخطر (الاحتمالية × الأثر)",
     lblResponse:"الاستجابة للخطر", optSelectResp:"-- اختر الاستجابة --",
     respMitigate:"تخفيف", respAccept:"قبول", respTransfer:"نقل", respAvoid:"تجنب",
     planLabel:"خطة المعالجة", phMitigation:"صف خطة المعالجة أو التعامل مع الخطر...",
     btnAdd:"➕ إضافة خطر", btnClear:"✕ مسح",
-    errRequired:"⚠ يرجى تعبئة جميع الحقول المطلوبة (العنوان، الإدارة، التصنيف، الاحتمالية، الأثر، المالك).",
+    errRequired:"⚠ يرجى تعبئة جميع الحقول المطلوبة (الاسم، البريد الإلكتروني، العنوان، الإدارة، التصنيف، الاحتمالية، الأثر، المالك).",
+    errEmail:"⚠ يرجى إدخال بريد إلكتروني صحيح.",
     tableHeader:"📋 جدول سجل المخاطر",
     phSearch:"🔍 بحث عن خطر...", allDepts:"كل الإدارات", allCats:"كل التصنيفات", allSev:"كل المستويات",
     sevLow:"منخفضة", sevMedium:"متوسطة", sevHigh:"مرتفعة", sevCritical:"حرجة",
@@ -419,21 +499,28 @@ const dict = {
     thStatus:"الحالة", thReviewDate:"تاريخ المراجعة", overdue:"متأخر",
     lblFramework:"الإطار المرجعي", optSelectFw:"-- اختر (اختياري) --",
     lblEvidence:"رابط المرفقات / الأدلة", phEvidence:"https://drive.google.com/...",
-    thFramework:"الإطار", thEvidence:"أدلة", evidenceLink:"عرض",
+    thFramework:"الإطار", thEvidence:"أدلة", evidenceLink:"عرض", thSubmittedBy:"مقدّم الطلب",
     dashHeader:"📊 لوحة المخاطر", heatmapTitle:"مصفوفة الحرارة (الاحتمالية × الأثر)", byDeptTitle:"المخاطر حسب الإدارة",
-    axisImpact:"الأثر", axisLikelihood:"الاحتمالية"
+    axisImpact:"الأثر", axisLikelihood:"الاحتمالية",
+    signedInAs:"مسجل الدخول باسم:", notSignedIn:"غير مسجل الدخول بحساب جوجل",
+    signinRequired:"للإضافة أو التعديل، يرجى تسجيل الدخول بحساب الجامعة (@sr.edu.sa):",
+    signedInAsUni:"مسجّل الدخول:", btnSignOut:"تسجيل الخروج",
+    domainDenied:"⚠ الدخول مقصور على حسابات جامعة سليمان الراجحي (@sr.edu.sa) فقط.",
+    mustSignInFirst:"⚠ يرجى تسجيل الدخول بحساب الجامعة أولاً."
   },
   en:{
     siteTitle:"Institutional Risk Register", siteSub:"Sulaiman Al Rajhi University — ICT Executive Directorate",
     navHint:"Register and track your department's risks",
     statTotal:"Total Risks", statLow:"Low / Medium", statHigh:"High Risks", statCritical:"Critical Risks",
     formHeader:"➕ Register New Risk",
-    lblTitle:"Risk Title *", phTitle:"e.g. Ransomware Attack on File Servers",
-    lblDept:"Department *", optSelect:"-- Select Department --",
+    lblSubmitterName:"Submitter Name", phSubmitterName:"Full name",
+    lblSubmitterEmail:"Email", phSubmitterEmail:"name@sr.edu.sa",
+    lblTitle:"Risk Title", phTitle:"e.g. Ransomware Attack on File Servers",
+    lblDept:"Department", optSelect:"-- Select Department --",
     optSelectCat:"-- Select Category --",
     deptIT:"IT", deptFinance:"Finance", deptHR:"Human Resources", deptAcademic:"Academic Affairs",
     deptStudent:"Student Affairs", deptFacilities:"Facilities & Maintenance", deptProcurement:"Procurement & Contracts", deptLegal:"Legal Affairs", deptOther:"Other",
-    lblCategory:"Category *",
+    lblCategory:"Category",
     catSecurity:"Security", catInfra:"Infrastructure", catData:"Data", catCompliance:"Compliance & Governance",
     catOperations:"Operations", catFinancial:"Financial", catReputational:"Reputational", catOther:"Other",
     lblDesc:"Description", phDesc:"Describe the risk in detail...",
@@ -441,13 +528,14 @@ const dict = {
     lik1:"1 – Rare", lik2:"2 – Unlikely", lik3:"3 – Possible", lik4:"4 – Likely", lik5:"5 – Almost Certain",
     lblImpact:"Impact (1 = Negligible, 5 = Catastrophic)",
     imp1:"1 – Negligible", imp2:"2 – Minor", imp3:"3 – Moderate", imp4:"4 – Major", imp5:"5 – Catastrophic",
-    lblOwner:"Risk Owner *", phOwner:"e.g. Network Security Team",
+    lblOwner:"Risk Owner", phOwner:"e.g. Network Security Team",
     scoreLabel:"Risk Score (L × I)",
     lblResponse:"Risk Response", optSelectResp:"-- Select Response --",
     respMitigate:"Mitigate", respAccept:"Accept", respTransfer:"Transfer", respAvoid:"Avoid",
     planLabel:"Mitigation Plan", phMitigation:"Describe the mitigation or treatment plan...",
     btnAdd:"➕ Add Risk", btnClear:"✕ Clear",
-    errRequired:"⚠ Please fill in all required fields (Title, Department, Category, Likelihood, Impact, Owner).",
+    errRequired:"⚠ Please fill in all required fields (Name, Email, Title, Department, Category, Likelihood, Impact, Owner).",
+    errEmail:"⚠ Please enter a valid email address.",
     tableHeader:"📋 Risk Register Table",
     phSearch:"🔍 Search risks...", allDepts:"All Departments", allCats:"All Categories", allSev:"All Severities",
     sevLow:"Low", sevMedium:"Medium", sevHigh:"High", sevCritical:"Critical",
@@ -467,9 +555,14 @@ const dict = {
     thStatus:"Status", thReviewDate:"Review Date", overdue:"Overdue",
     lblFramework:"Framework Reference", optSelectFw:"-- Select (optional) --",
     lblEvidence:"Evidence / Attachment Link", phEvidence:"https://drive.google.com/...",
-    thFramework:"Framework", thEvidence:"Evidence", evidenceLink:"View",
+    thFramework:"Framework", thEvidence:"Evidence", evidenceLink:"View", thSubmittedBy:"Submitted By",
     dashHeader:"📊 Risk Dashboard", heatmapTitle:"Heat Map (Likelihood × Impact)", byDeptTitle:"Risks by Department",
-    axisImpact:"Impact", axisLikelihood:"Likelihood"
+    axisImpact:"Impact", axisLikelihood:"Likelihood",
+    signedInAs:"Signed in as:", notSignedIn:"Not signed in with a Google account",
+    signinRequired:"To add or edit, please sign in with your university account (@sr.edu.sa):",
+    signedInAsUni:"Signed in:", btnSignOut:"Sign Out",
+    domainDenied:"⚠ Access is restricted to Sulaiman Al Rajhi University accounts (@sr.edu.sa) only.",
+    mustSignInFirst:"⚠ Please sign in with your university account first."
   }
 };
 
@@ -481,7 +574,6 @@ function setLang(lang){
   const html = document.getElementById('htmlRoot');
   html.lang = lang;
   html.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.body.classList.toggle('sru-en', lang === 'en');
   document.getElementById('btnAr').classList.toggle('active', lang==='ar');
   document.getElementById('btnEn').classList.toggle('active', lang==='en');
 
@@ -525,6 +617,25 @@ function saveApiUrl(){
   loadRisks();
 }
 
+async function checkWhoAmI(){
+  const el = document.getElementById('whoamiStatus');
+  if(!API_URL){ el.textContent = ''; return; }
+  try{
+    const res = await fetch(`${API_URL}?action=whoami`);
+    const data = await res.json();
+    const t = dict[currentLang];
+    if(data.ok && data.email){
+      el.textContent = `${t.signedInAs} ${data.email}`;
+      el.className = 'sync-status ok';
+    } else {
+      el.textContent = t.notSignedIn;
+      el.className = 'sync-status';
+    }
+  } catch(e){
+    el.textContent = '';
+  }
+}
+
 async function loadRisks(){
   if(!API_URL){
     // fallback: local-only mode
@@ -537,6 +648,7 @@ async function loadRisks(){
     return;
   }
   setSyncStatus('syncLoading');
+  checkWhoAmI();
   try{
     const res = await fetch(API_URL);
     const data = await res.json();
@@ -595,10 +707,105 @@ function updatePlanLabel(){
   }
 }
 
+/* ============ Google Sign-In (restricted to @sr.edu.sa) ============ */
+// TODO: replace with your own OAuth 2.0 Client ID from Google Cloud Console
+// (APIs & Services > Credentials > OAuth client ID > Web application).
+// Add your site's exact URL (e.g. https://ictsru.github.io) under
+// "Authorized JavaScript origins" for the button to work.
+const GOOGLE_CLIENT_ID = '179253842252-qorveu4cs1eahp9a4vrtkbj8m2fomcbt.apps.googleusercontent.com
+.apps.googleusercontent.com';
+const ALLOWED_DOMAIN = 'sr.edu.sa';
+
+let currentUser = null; // {name, email}
+
+function parseJwt(token){
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g,'+').replace(/_/g,'/');
+  const jsonPayload = decodeURIComponent(
+    atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+  );
+  return JSON.parse(jsonPayload);
+}
+
+function handleGoogleCredential(response){
+  let payload;
+  try { payload = parseJwt(response.credential); } catch(e){ return; }
+  const email = (payload.email || '').toLowerCase().trim();
+  const name = payload.name || '';
+
+  if(!email.endsWith('@' + ALLOWED_DOMAIN)){
+    alert(dict[currentLang].domainDenied);
+    return;
+  }
+
+  currentUser = { name, email };
+  sessionStorage.setItem('sriskregister_user', JSON.stringify(currentUser));
+  applySignedInUser();
+}
+
+function applySignedInUser(){
+  if(!currentUser) return;
+  const nameField = document.getElementById('fSubmitterName');
+  const emailField = document.getElementById('fSubmitterEmail');
+  nameField.value = currentUser.name;
+  nameField.readOnly = true;
+  emailField.value = currentUser.email;
+  emailField.readOnly = true;
+  document.getElementById('signinGate').style.display = 'none';
+  document.getElementById('signedInBar').style.display = 'flex';
+  document.getElementById('signedInEmail').textContent = currentUser.email;
+}
+
+function signOutUser(){
+  currentUser = null;
+  sessionStorage.removeItem('sriskregister_user');
+  const nameField = document.getElementById('fSubmitterName');
+  const emailField = document.getElementById('fSubmitterEmail');
+  nameField.value = '';
+  nameField.readOnly = false;
+  emailField.value = '';
+  emailField.readOnly = false;
+  document.getElementById('signinGate').style.display = 'flex';
+  document.getElementById('signedInBar').style.display = 'none';
+  if(window.google && google.accounts && google.accounts.id){
+    google.accounts.id.disableAutoSelect();
+  }
+}
+
+function initGoogleSignIn(){
+  if(!window.google || !google.accounts || !google.accounts.id) return;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential
+  });
+  google.accounts.id.renderButton(
+    document.getElementById('googleSignInBtn'),
+    { theme: 'outline', size: 'medium', text: 'signin_with', locale: currentLang }
+  );
+
+  // Restore a signed-in session within the same browser tab
+  const saved = sessionStorage.getItem('sriskregister_user');
+  if(saved){
+    try{
+      const parsed = JSON.parse(saved);
+      if(parsed.email && parsed.email.toLowerCase().endsWith('@' + ALLOWED_DOMAIN)){
+        currentUser = parsed;
+        applySignedInUser();
+      }
+    } catch(e){ /* ignore malformed saved session */ }
+  }
+}
+
 function clearForm(){
   ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation','fReviewDate','fFramework','fEvidence'].forEach(id=>{
     document.getElementById(id).value = '';
   });
+  if(currentUser){
+    applySignedInUser();
+  } else {
+    document.getElementById('fSubmitterName').value = '';
+    document.getElementById('fSubmitterEmail').value = '';
+  }
   document.getElementById('fStatus').selectedIndex = 0;
   calcScore();
   updatePlanLabel();
@@ -608,6 +815,14 @@ function clearForm(){
 }
 
 async function addRisk(){
+  if(!currentUser){
+    const err = document.getElementById('formError');
+    err.textContent = dict[currentLang].mustSignInFirst;
+    err.style.display = 'block';
+    return;
+  }
+  const submitterName = document.getElementById('fSubmitterName').value.trim();
+  const submitterEmail = document.getElementById('fSubmitterEmail').value.trim();
   const title = document.getElementById('fTitle').value.trim();
   const dept = document.getElementById('fDept').value;
   const cat = document.getElementById('fCategory').value;
@@ -624,8 +839,14 @@ async function addRisk(){
   const err = document.getElementById('formError');
   const t = dict[currentLang];
 
-  if(!title||!dept||!cat||!lik||!imp||!owner){
+  if(!submitterName||!title||!dept||!cat||!lik||!imp||!owner){
     err.textContent = t.errRequired;
+    err.style.display='block';
+    return;
+  }
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!submitterEmail || !emailPattern.test(submitterEmail)){
+    err.textContent = t.errEmail;
     err.style.display='block';
     return;
   }
@@ -635,6 +856,7 @@ async function addRisk(){
   const risk = {
     id: editId || Date.now(),
     title, dept, cat, desc, lik:+lik, imp:+imp, score, owner, response, mit, status, reviewDate, framework, evidenceUrl,
+    submitterName, submitterEmail,
     date: editId ? (risks.find(r=>r.id===editId)||{}).date : new Date().toLocaleDateString('en-GB')
   };
 
@@ -672,6 +894,10 @@ async function addRisk(){
 }
 
 async function deleteRisk(id){
+  if(!currentUser){
+    alert(dict[currentLang].mustSignInFirst);
+    return;
+  }
   if(!confirm(dict[currentLang].confirmDel)) return;
   if(!API_URL){
     risks = risks.filter(r=>r.id!==id);
@@ -690,8 +916,13 @@ async function deleteRisk(id){
 }
 
 function editRisk(id){
+  if(!currentUser){
+    alert(dict[currentLang].mustSignInFirst);
+    return;
+  }
   const r = risks.find(r=>r.id===id);
   if(!r) return;
+  applySignedInUser();
   document.getElementById('fTitle').value = r.title;
   document.getElementById('fDept').value = r.dept || '';
   document.getElementById('fCategory').value = r.cat;
@@ -709,7 +940,7 @@ function editRisk(id){
   updatePlanLabel();
   editId = id;
   document.getElementById('btnAdd').textContent = dict[currentLang].saveBtn;
-  document.querySelector('.card.no-print').scrollIntoView({behavior:'smooth'});
+  document.querySelector('.sru-card.no-print').scrollIntoView({behavior:'smooth'});
 }
 
 function populateDeptFilter(){
@@ -774,7 +1005,7 @@ function renderTable(){
     return `<tr>
       <td>${i+1}</td>
       <td><strong>${escapeHtml(r.title)}</strong><br><span style="font-size:.72rem;color:#9ca3af">${escapeHtml(r.date||'')}</span></td>
-      <td><span class="badge badge-dept">${escapeHtml(r.dept||'—')}</span></td>
+      <td><span class="sru-chip">${escapeHtml(r.dept||'—')}</span></td>
       <td>${escapeHtml(r.cat)}</td>
       <td style="max-width:190px;white-space:normal">${escapeHtml(r.desc)||'—'}</td>
       <td style="text-align:center">${r.lik}</td>
@@ -784,13 +1015,14 @@ function renderTable(){
       <td>${escapeHtml(r.owner)}</td>
       <td>${escapeHtml(r.response)||'—'}</td>
       <td style="max-width:190px;white-space:normal">${escapeHtml(r.mit)||'—'}</td>
-      <td><span class="badge badge-dept">${escapeHtml(r.status || 'New')}</span></td>
+      <td><span class="sru-chip">${escapeHtml(r.status || 'New')}</span></td>
       <td>${r.reviewDate ? `<span style="${isOverdue(r.reviewDate) ? 'color:#dc2626;font-weight:700' : ''}">${escapeHtml(r.reviewDate)}${isOverdue(r.reviewDate) ? ' ⚠' : ''}</span>` : '—'}</td>
       <td>${escapeHtml(r.framework)||'—'}</td>
-      <td>${r.evidenceUrl ? `<a href="${escapeHtml(r.evidenceUrl)}" target="_blank" rel="noopener" style="color:var(--blue)">${t.evidenceLink}</a>` : '—'}</td>
+      <td>${r.evidenceUrl ? `<a href="${escapeHtml(r.evidenceUrl)}" target="_blank" rel="noopener" style="color:var(--sru-blue)">${t.evidenceLink}</a>` : '—'}</td>
+      <td style="font-size:.74rem;color:var(--sru-muted)">${escapeHtml(r.submitterName)||'—'}${r.submitterEmail ? `<br><a href="mailto:${escapeHtml(r.submitterEmail)}" style="color:var(--sru-blue)">${escapeHtml(r.submitterEmail)}</a>` : ''}</td>
       <td class="no-print" style="white-space:nowrap">
-        <button class="btn btn-warning btn-sm" onclick="editRisk(${r.id})">${t.editBtn}</button>
-        <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="deleteRisk(${r.id})">${t.delBtn}</button>
+        <button class="sru-btn sru-btn-warning sru-btn-sm" onclick="editRisk(${r.id})">${t.editBtn}</button>
+        <button class="sru-btn sru-btn-danger sru-btn-sm" style="margin-top:4px" onclick="deleteRisk(${r.id})">${t.delBtn}</button>
       </td>
     </tr>`;
   }).join('');
@@ -843,18 +1075,18 @@ function renderDashboard(){
       <div class="bar-label" title="${escapeHtml(dept)}">${escapeHtml(dept)}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${(n/maxCount*100)}%"></div></div>
       <div class="bar-count">${n}</div>
-    </div>`).join('') : `<div style="color:var(--muted);font-size:.8rem">—</div>`;
+    </div>`).join('') : `<div style="color:var(--sru-muted);font-size:.8rem">—</div>`;
 }
 
 function exportCSV(){
   const t = dict[currentLang];
   if(!risks.length){alert(t.noRisks);return;}
-  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,t.thStatus,t.thReviewDate,t.thFramework,t.thEvidence,'Date'];
+  const headers = [t.thTitle,t.thDept,t.thCategory,t.thDesc,t.thLik,t.thImp,t.thScore,t.thSeverity,t.thOwner,t.thResponse,t.thMitigation,t.thStatus,t.thReviewDate,t.thFramework,t.thEvidence,t.thSubmittedBy,'Email','Date'];
   const rows = risks.map(r=>[
     `"${(r.title||'').replace(/"/g,'""')}"`, `"${(r.dept||'').replace(/"/g,'""')}"`, `"${(r.cat||'').replace(/"/g,'""')}"`,
     `"${(r.desc||'').replace(/"/g,'""')}"`, r.lik, r.imp, r.score, dict[currentLang][scoreInfo(r.score).labelKey],
     `"${(r.owner||'').replace(/"/g,'""')}"`, `"${(r.response||'').replace(/"/g,'""')}"`, `"${(r.mit||'').replace(/"/g,'""')}"`,
-    `"${(r.status||'New').replace(/"/g,'""')}"`, r.reviewDate || '', `"${(r.framework||'').replace(/"/g,'""')}"`, r.evidenceUrl || '', r.date
+    `"${(r.status||'New').replace(/"/g,'""')}"`, r.reviewDate || '', `"${(r.framework||'').replace(/"/g,'""')}"`, r.evidenceUrl || '', `"${(r.submitterName||'').replace(/"/g,'""')}"`, r.submitterEmail || '', r.date
   ]);
   const csv = '\uFEFF' + [headers, ...rows].map(r=>r.join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
@@ -868,6 +1100,15 @@ function exportCSV(){
 document.getElementById('apiUrlInput').value = API_URL;
 setLang(currentLang);
 loadRisks();
+
+// GIS script loads with async/defer, so poll briefly until it's ready
+(function waitForGoogle(){
+  if(window.google && google.accounts && google.accounts.id){
+    initGoogleSignIn();
+  } else {
+    setTimeout(waitForGoogle, 200);
+  }
+})();
 </script>
 </body>
 </html>
