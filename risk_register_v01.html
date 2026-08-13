@@ -8,6 +8,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
+  /* ============================================================
+     SRU UI Kit — عُدّة الهوية الرقمية (مُطبَّقة من sru-ui.css)
+     جامعة سليمان الراجحي · إدارة التحول الرقمي
+     ============================================================ */
   :root{
     --sru-purple:#501e8c; --sru-purple-dark:#3a1464; --sru-purple-light:#f0ebf8;
     --sru-blue:#0a6eaa;   --sru-blue-light:#e6f3fa;
@@ -178,7 +182,7 @@
 <div class="sru-topbar">
   <div class="sru-logo"><span class="sru-en">SRU</span></div>
   <div class="titles">
-    <h1 class="sru-title" style="color:#fff" data-i18n="siteTitle">11سجل المخاطر المؤسسي</h1>
+    <h1 class="sru-title" style="color:#fff" data-i18n="siteTitle">سجل المخاطر المؤسسي</h1>
     <p data-i18n="siteSub">جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات</p>
   </div>
 </div>
@@ -191,7 +195,7 @@
 </div>
 <div class="sru-diag"></div>
 <div class="cfg-bar no-print" id="signinGate" style="background:#fff7ed;border-bottom:1px solid #fed7aa">
-  <span data-i18n="signinRequired">للإضافة أو التعديل، يرجى تسجيل 11الدخول بحساب الجامعة (@sr.edu.sa):</span>
+  <span data-i18n="signinRequired">للإضافة أو التعديل، يرجى تسجيل الدخول بحساب الجامعة (@sr.edu.sa):</span>
   <div id="googleSignInBtn"></div>
 </div>
 <div class="cfg-bar no-print" id="signedInBar" style="display:none;background:#f0fdf4;border-bottom:1px solid #bbf7d0">
@@ -201,7 +205,6 @@
   <button class="sru-btn sru-btn-secondary sru-btn-sm" onclick="signOutUser()" data-i18n="btnSignOut">تسجيل الخروج</button>
 </div>
 <div class="cfg-bar no-print" id="cfgBar" style="justify-content:flex-end">
-  <span class="sync-status" id="whoamiStatus"></span>
   <span class="sync-status" id="syncStatus"></span>
   <a href="#" onclick="toggleCfg();return false;" style="font-size:.76rem;color:var(--sru-purple)" data-i18n="cfgToggle">⚙ إعدادات الاتصال</a>
 </div>
@@ -450,7 +453,7 @@
 const dict = {
   ar:{
     siteTitle:"سجل المخاطر المؤسسي", siteSub:"جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات",
-    navHint:"سجّل وتابع11 مخاطر إدارتك",
+    navHint:"سجّل وتابع مخاطر 13إدارتك",
     statTotal:"إجمالي المخاطر", statLow:"منخفضة / متوسطة", statHigh:"مرتفعة", statCritical:"حرجة",
     formHeader:"➕ تسجيل خطر جديد",
     lblSubmitterName:"اسم مقدّم الطلب", phSubmitterName:"الاسم الكامل",
@@ -498,7 +501,6 @@ const dict = {
     thFramework:"الإطار", thEvidence:"أدلة", evidenceLink:"عرض", thSubmittedBy:"مقدّم الطلب",
     dashHeader:"📊 لوحة المخاطر", heatmapTitle:"مصفوفة الحرارة (الاحتمالية × الأثر)", byDeptTitle:"المخاطر حسب الإدارة",
     axisImpact:"الأثر", axisLikelihood:"الاحتمالية",
-    signedInAs:"مسجل الدخول باسم:", notSignedIn:"غير مسجل الدخول بحساب جوجل",
     signinRequired:"للإضافة أو التعديل، يرجى تسجيل الدخول بحساب الجامعة (@sr.edu.sa):",
     signedInAsUni:"مسجّل الدخول:", btnSignOut:"تسجيل الخروج",
     domainDenied:"⚠ الدخول مقصور على حسابات جامعة سليمان الراجحي (@sr.edu.sa) فقط.",
@@ -554,7 +556,6 @@ const dict = {
     thFramework:"Framework", thEvidence:"Evidence", evidenceLink:"View", thSubmittedBy:"Submitted By",
     dashHeader:"📊 Risk Dashboard", heatmapTitle:"Heat Map (Likelihood × Impact)", byDeptTitle:"Risks by Department",
     axisImpact:"Impact", axisLikelihood:"Likelihood",
-    signedInAs:"Signed in as:", notSignedIn:"Not signed in with a Google account",
     signinRequired:"To add or edit, please sign in with your university account (@sr.edu.sa):",
     signedInAsUni:"Signed in:", btnSignOut:"Sign Out",
     domainDenied:"⚠ Access is restricted to Sulaiman Al Rajhi University accounts (@sr.edu.sa) only.",
@@ -613,25 +614,6 @@ function saveApiUrl(){
   loadRisks();
 }
 
-async function checkWhoAmI(){
-  const el = document.getElementById('whoamiStatus');
-  if(!API_URL){ el.textContent = ''; return; }
-  try{
-    const res = await fetch(`${API_URL}?action=whoami`);
-    const data = await res.json();
-    const t = dict[currentLang];
-    if(data.ok && data.email){
-      el.textContent = `${t.signedInAs} ${data.email}`;
-      el.className = 'sync-status ok';
-    } else {
-      el.textContent = t.notSignedIn;
-      el.className = 'sync-status';
-    }
-  } catch(e){
-    el.textContent = '';
-  }
-}
-
 async function loadRisks(){
   if(!API_URL){
     // fallback: local-only mode
@@ -644,7 +626,6 @@ async function loadRisks(){
     return;
   }
   setSyncStatus('syncLoading');
-  checkWhoAmI();
   try{
     const res = await fetch(API_URL);
     const data = await res.json();
