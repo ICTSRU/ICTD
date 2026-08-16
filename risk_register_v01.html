@@ -145,11 +145,14 @@
 
   #formError{color:#dc2626;font-size:.83rem;margin-top:8px;display:none}
 
-  .toast{position:fixed;bottom:24px;inset-inline-end:24px;background:#16a34a;color:#fff;
-    padding:13px 22px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);font-weight:800;
-    font-size:.88rem;z-index:9999;opacity:0;transform:translateY(12px);
-    transition:opacity .25s ease,transform .25s ease;pointer-events:none;display:flex;align-items:center;gap:8px}
-  .toast.show{opacity:1;transform:translateY(0)}
+  .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-20px);
+    background:#16a34a;color:#fff;padding:18px 32px;border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);font-weight:900;font-size:1.05rem;z-index:9999;
+    opacity:0;transition:opacity .3s ease,transform .3s ease;pointer-events:none;
+    display:flex;align-items:center;gap:12px;max-width:90vw}
+  .toast .toast-icon{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.25);
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
   .dash-title{font-size:.82rem;font-weight:800;color:var(--sru-muted);margin-bottom:10px}
@@ -192,7 +195,7 @@
 <body class="sru">
 
 <div class="sru-topbar">
-  <div class="version-badge sru-en">v19</div>
+  <div class="version-badge sru-en">v20</div>
   <div class="sru-logo"><span class="sru-en">SRU</span></div>
   <div class="titles">
     <h1 class="sru-title" style="color:#fff" data-i18n="siteTitle">سجل المخاطر المؤسسي</h1>
@@ -467,7 +470,7 @@
 
 </div>
 
-<div id="toast" class="toast"></div>
+<div id="toast" class="toast"><span class="toast-icon">✓</span><span id="toastMsg"></span></div>
 
 <script>
 /* ============ i18n ============ */
@@ -970,10 +973,10 @@ function populateCatFilter(){
 
 function showToast(message){
   const el = document.getElementById('toast');
-  el.textContent = message;
+  document.getElementById('toastMsg').textContent = message;
   el.classList.add('show');
   clearTimeout(el._hideTimer);
-  el._hideTimer = setTimeout(()=>{ el.classList.remove('show'); }, 3200);
+  el._hideTimer = setTimeout(()=>{ el.classList.remove('show'); }, 3800);
 }
 
 function escapeHtml(s){
