@@ -123,9 +123,9 @@
   tbody td{padding:11px 9px;vertical-align:top}
 
   .badge{display:inline-block;padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:800;white-space:nowrap;letter-spacing:.2px}
-  .badge-low{background:#dcfce7;color:#166534}
-  .badge-medium{background:#fef9c3;color:#854d0e}
-  .badge-high{background:#fed7aa;color:#9a3412}
+  .badge-low{background:#fef9c3;color:#a16207}
+  .badge-medium{background:#fed7aa;color:#c2410c}
+  .badge-high{background:#fecaca;color:#dc2626}
   .badge-critical{background:#fee2e2;color:#991b1b}
 
   .empty-state{text-align:center;padding:56px 20px;color:#9ca3af}
@@ -136,9 +136,9 @@
     transition:transform .15s ease,box-shadow .15s ease}
   .stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(80,30,140,.12)}
   .stat-card.total{border-top-color:var(--sru-purple)}
-  .stat-card.low{border-top-color:#16a34a}
-  .stat-card.high{border-top-color:#d97706}
-  .stat-card.critical{border-top-color:#dc2626}
+  .stat-card.low{border-top-color:#ca8a04}
+  .stat-card.high{border-top-color:#ea580c}
+  .stat-card.critical{border-top-color:#991b1b}
   .stat-icon{font-size:1.3rem;margin-bottom:4px;opacity:.85}
   .stat-val{font-size:2rem;font-weight:800;color:var(--sru-ink)}
   .stat-lbl{font-size:.76rem;color:var(--sru-muted);margin-top:4px;font-weight:800}
@@ -195,7 +195,7 @@
 <body class="sru">
 
 <div class="sru-topbar">
-  <div class="version-badge sru-en">v20</div>
+  <div class="version-badge sru-en">v21</div>
   <div class="sru-logo"><span class="sru-en">SRU</span></div>
   <div class="titles">
     <h1 class="sru-title" style="color:#fff" data-i18n="siteTitle">سجل المخاطر المؤسسي</h1>
@@ -237,7 +237,7 @@
   <!-- Stats -->
   <div class="stats-row" id="statsRow">
     <div class="stat-card total"><div class="stat-icon">📋</div><div class="stat-val" id="statTotal">0</div><div class="stat-lbl" data-i18n="statTotal">إجمالي المخاطر</div></div>
-    <div class="stat-card low"><div class="stat-icon">🟢</div><div class="stat-val" id="statLow">0</div><div class="stat-lbl" data-i18n="statLow">منخفضة / متوسطة</div></div>
+    <div class="stat-card low"><div class="stat-icon">🟡</div><div class="stat-val" id="statLow">0</div><div class="stat-lbl" data-i18n="statLow">منخفضة / متوسطة</div></div>
     <div class="stat-card high"><div class="stat-icon">🟠</div><div class="stat-val" id="statHigh">0</div><div class="stat-lbl" data-i18n="statHigh">مرتفعة</div></div>
     <div class="stat-card critical"><div class="stat-icon">🔴</div><div class="stat-val" id="statCritical">0</div><div class="stat-lbl" data-i18n="statCritical">حرجة</div></div>
   </div>
@@ -454,9 +454,9 @@
             <div id="heatmap" class="heatmap"></div>
           </div>
           <div class="heatmap-legend">
-            <span><i style="background:#166534"></i><span data-i18n="sevLow">منخفضة</span></span>
-            <span><i style="background:#854d0e"></i><span data-i18n="sevMedium">متوسطة</span></span>
-            <span><i style="background:#9a3412"></i><span data-i18n="sevHigh">مرتفعة</span></span>
+            <span><i style="background:#ca8a04"></i><span data-i18n="sevLow">منخفضة</span></span>
+            <span><i style="background:#ea580c"></i><span data-i18n="sevMedium">متوسطة</span></span>
+            <span><i style="background:#dc2626"></i><span data-i18n="sevHigh">مرتفعة</span></span>
             <span><i style="background:#991b1b"></i><span data-i18n="sevCritical">حرجة</span></span>
           </div>
         </div>
@@ -676,9 +676,9 @@ async function loadRisks(){
 
 function scoreInfo(score){
   if(score >= 15) return {label:'Critical', labelKey:'sevCritical', cls:'badge-critical', color:'#991b1b'};
-  if(score >= 10) return {label:'High', labelKey:'sevHigh', cls:'badge-high', color:'#9a3412'};
-  if(score >= 5)  return {label:'Medium', labelKey:'sevMedium', cls:'badge-medium', color:'#854d0e'};
-  return {label:'Low', labelKey:'sevLow', cls:'badge-low', color:'#166534'};
+  if(score >= 10) return {label:'High', labelKey:'sevHigh', cls:'badge-high', color:'#dc2626'};
+  if(score >= 5)  return {label:'Medium', labelKey:'sevMedium', cls:'badge-medium', color:'#ea580c'};
+  return {label:'Low', labelKey:'sevLow', cls:'badge-low', color:'#ca8a04'};
 }
 
 function calcScore(){
