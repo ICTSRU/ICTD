@@ -195,7 +195,7 @@
 <body class="sru">
 
 <div class="sru-topbar">
-  <div class="version-badge sru-en">v21</div>
+  <div class="version-badge sru-en">v22</div>
   <div class="sru-logo"><span class="sru-en">SRU</span></div>
   <div class="titles">
     <h1 class="sru-title" style="color:#fff" data-i18n="siteTitle">سجل المخاطر المؤسسي</h1>
@@ -316,7 +316,23 @@
         </div>
         <div class="form-group sru-field">
           <label class="required" data-i18n="lblOwner">مالك الخطر</label>
-          <input type="text" id="fOwner" data-i18n-ph="phOwner"/>
+          <select id="fOwner" onchange="toggleOwnerOther()">
+            <option value="" data-i18n="optSelectOwner">-- اختر مالك الخطر --</option>
+            <option data-i18n="ownerCyber">فريق أمن المعلومات</option>
+            <option data-i18n="ownerInfra">فريق البنية التحتية</option>
+            <option data-i18n="ownerDb">فريق قواعد البيانات</option>
+            <option data-i18n="ownerSupport">فريق الدعم الفني</option>
+            <option data-i18n="ownerDigital">فريق التحول الرقمي</option>
+            <option data-i18n="ownerNetwork">إدارة الشبكات</option>
+            <option data-i18n="ownerGovernance">فريق حوكمة البيانات</option>
+            <option data-i18n="ownerAcademic">الشؤون الأكاديمية</option>
+            <option data-i18n="ownerStudent">شؤون الطلاب</option>
+            <option data-i18n="ownerHR">الموارد البشرية</option>
+            <option data-i18n="ownerFinance">الشؤون المالية</option>
+            <option data-i18n="ownerProcurement">المشتريات والعقود</option>
+            <option value="other" data-i18n="ownerOther">أخرى (حدد)</option>
+          </select>
+          <input type="text" id="fOwnerOther" style="display:none;margin-top:6px" data-i18n-ph="phOwnerOther"/>
         </div>
         <div class="form-group sru-field">
           <div class="score-display">
@@ -498,6 +514,12 @@ const dict = {
     lblImpact:"الأثر (١ = طفيف، ٥ = كارثي)",
     imp1:"١ – طفيف", imp2:"٢ – بسيط", imp3:"٣ – متوسط", imp4:"٤ – كبير", imp5:"٥ – كارثي",
     lblOwner:"مالك الخطر", phOwner:"مثال: فريق أمن الشبكات",
+    optSelectOwner:"-- اختر مالك الخطر --",
+    ownerCyber:"فريق أمن المعلومات", ownerInfra:"فريق البنية التحتية", ownerDb:"فريق قواعد البيانات",
+    ownerSupport:"فريق الدعم الفني", ownerDigital:"فريق التحول الرقمي", ownerNetwork:"إدارة الشبكات",
+    ownerGovernance:"فريق حوكمة البيانات", ownerAcademic:"الشؤون الأكاديمية", ownerStudent:"شؤون الطلاب",
+    ownerHR:"الموارد البشرية", ownerFinance:"الشؤون المالية", ownerProcurement:"المشتريات والعقود",
+    ownerOther:"أخرى (حدد)", phOwnerOther:"اكتب اسم الفريق أو الجهة...",
     scoreLabel:"درجة الخطر (الاحتمالية × الأثر)",
     lblResponse:"الاستجابة للخطر", optSelectResp:"-- اختر الاستجابة --",
     respMitigate:"تخفيف", respAccept:"قبول", respTransfer:"نقل", respAvoid:"تجنب",
@@ -556,6 +578,12 @@ const dict = {
     lblImpact:"Impact (1 = Negligible, 5 = Catastrophic)",
     imp1:"1 – Negligible", imp2:"2 – Minor", imp3:"3 – Moderate", imp4:"4 – Major", imp5:"5 – Catastrophic",
     lblOwner:"Risk Owner", phOwner:"e.g. Network Security Team",
+    optSelectOwner:"-- Select Risk Owner --",
+    ownerCyber:"Cybersecurity Team", ownerInfra:"Infrastructure Team", ownerDb:"Database Team",
+    ownerSupport:"Technical Support Team", ownerDigital:"Digital Transformation Team", ownerNetwork:"Network Management",
+    ownerGovernance:"Data Governance Team", ownerAcademic:"Academic Affairs", ownerStudent:"Student Affairs",
+    ownerHR:"Human Resources", ownerFinance:"Finance", ownerProcurement:"Procurement & Contracts",
+    ownerOther:"Other (specify)", phOwnerOther:"Enter team or party name...",
     scoreLabel:"Risk Score (L × I)",
     lblResponse:"Risk Response", optSelectResp:"-- Select Response --",
     respMitigate:"Mitigate", respAccept:"Accept", respTransfer:"Transfer", respAvoid:"Avoid",
@@ -679,6 +707,13 @@ function scoreInfo(score){
   if(score >= 10) return {label:'High', labelKey:'sevHigh', cls:'badge-high', color:'#dc2626'};
   if(score >= 5)  return {label:'Medium', labelKey:'sevMedium', cls:'badge-medium', color:'#ea580c'};
   return {label:'Low', labelKey:'sevLow', cls:'badge-low', color:'#ca8a04'};
+}
+
+function toggleOwnerOther(){
+  const sel = document.getElementById('fOwner');
+  const other = document.getElementById('fOwnerOther');
+  other.style.display = sel.value === 'other' ? 'block' : 'none';
+  if(sel.value !== 'other') other.value = '';
 }
 
 function calcScore(){
@@ -805,9 +840,10 @@ function initGoogleSignIn(){
 }
 
 function clearForm(){
-  ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation','fReviewDate','fFramework','fEvidence'].forEach(id=>{
+  ['fTitle','fDept','fCategory','fDesc','fLikelihood','fImpact','fOwner','fResponse','fMitigation','fReviewDate','fFramework','fEvidence','fOwnerOther'].forEach(id=>{
     document.getElementById(id).value = '';
   });
+  document.getElementById('fOwnerOther').style.display = 'none';
   if(currentUser){
     applySignedInUser();
   } else {
@@ -837,7 +873,8 @@ async function addRisk(){
   const desc = document.getElementById('fDesc').value.trim();
   const lik = document.getElementById('fLikelihood').value;
   const imp = document.getElementById('fImpact').value;
-  const owner = document.getElementById('fOwner').value.trim();
+  const ownerSelect = document.getElementById('fOwner').value;
+  const owner = ownerSelect === 'other' ? document.getElementById('fOwnerOther').value.trim() : ownerSelect;
   const response = document.getElementById('fResponse').value;
   const mit = document.getElementById('fMitigation').value.trim();
   const status = document.getElementById('fStatus').value;
@@ -940,7 +977,16 @@ function editRisk(id){
   document.getElementById('fDesc').value = r.desc;
   document.getElementById('fLikelihood').value = r.lik;
   document.getElementById('fImpact').value = r.imp;
-  document.getElementById('fOwner').value = r.owner;
+  const ownerSel = document.getElementById('fOwner');
+  const ownerMatch = Array.from(ownerSel.options).some(o => o.value === r.owner);
+  if(ownerMatch){
+    ownerSel.value = r.owner;
+    document.getElementById('fOwnerOther').style.display = 'none';
+  } else {
+    ownerSel.value = 'other';
+    document.getElementById('fOwnerOther').style.display = 'block';
+    document.getElementById('fOwnerOther').value = r.owner || '';
+  }
   document.getElementById('fResponse').value = r.response || '';
   document.getElementById('fMitigation').value = r.mit;
   document.getElementById('fStatus').value = r.status || 'New';
