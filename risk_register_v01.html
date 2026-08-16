@@ -141,6 +141,12 @@
 
   #formError{color:#dc2626;font-size:.83rem;margin-top:8px;display:none}
 
+  .toast{position:fixed;bottom:24px;inset-inline-end:24px;background:#16a34a;color:#fff;
+    padding:13px 22px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);font-weight:800;
+    font-size:.88rem;z-index:9999;opacity:0;transform:translateY(12px);
+    transition:opacity .25s ease,transform .25s ease;pointer-events:none;display:flex;align-items:center;gap:8px}
+  .toast.show{opacity:1;transform:translateY(0)}
+
   .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
   .dash-title{font-size:.82rem;font-weight:800;color:var(--sru-muted);margin-bottom:10px}
   .heatmap{display:grid;grid-template-columns:auto repeat(5,1fr);gap:3px;max-width:420px;flex:1}
@@ -218,6 +224,8 @@
 
 <div class="sru-container">
 
+  <h2 class="sru-title" style="font-size:1.3rem;margin-bottom:14px" data-i18n="dashboardMainTitle">لوحة مؤشرات المخاطر المؤسسية</h2>
+
   <!-- Stats -->
   <div class="stats-row" id="statsRow">
     <div class="stat-card total"><div class="stat-icon">📋</div><div class="stat-val" id="statTotal">0</div><div class="stat-lbl" data-i18n="statTotal">إجمالي المخاطر</div></div>
@@ -227,7 +235,7 @@
   </div>
 
   <!-- Form -->
-  <div class="sru-card no-print">
+  <div class="sru-card no-print" id="riskFormCard" style="display:none">
     <div class="sru-card-header"><span class="sru-title" style="font-size:inherit" data-i18n="formHeader">➕ تسجيل خطر جديد</span></div>
     <div class="sru-card-body">
       <div class="form-grid">
@@ -445,7 +453,7 @@
           </div>
         </div>
         <div>
-          <div class="dash-title" data-i18n="byDeptTitle">المخاطر حسب الإدارة</div>
+          <div class="dash-title" data-i18n="byDeptTitle">سجل المخاطر حسب الإدارة</div>
           <div id="deptChart" class="bar-chart"></div>
         </div>
       </div>
@@ -454,12 +462,16 @@
 
 </div>
 
+<div id="toast" class="toast"></div>
+
 <script>
 /* ============ i18n ============ */
 const dict = {
   ar:{
     siteTitle:"سجل المخاطر المؤسسي", siteSub:"جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات",
     navHint:"سجّل وتابع مخاطر إدارتك",
+    dashboardMainTitle:"لوحة مؤشرات المخاطر المؤسسية",
+    toastAdded:"✅ تم إضافة الخطر بنجاح", toastUpdated:"✅ تم تحديث الخطر بنجاح",
     statTotal:"إجمالي المخاطر", statLow:"منخفضة / متوسطة", statHigh:"مرتفعة", statCritical:"حرجة",
     formHeader:"➕ تسجيل خطر جديد",
     lblSubmitterName:"اسم مقدّم الطلب", phSubmitterName:"الاسم الكامل",
@@ -505,7 +517,7 @@ const dict = {
     lblFramework:"الإطار المرجعي", optSelectFw:"-- اختر (اختياري) --",
     lblEvidence:"رابط المرفقات / الأدلة", phEvidence:"https://drive.google.com/...",
     thFramework:"الإطار", thEvidence:"أدلة", evidenceLink:"عرض", thSubmittedBy:"مقدّم الطلب",
-    dashHeader:"📊 لوحة المخاطر", heatmapTitle:"مصفوفة الحرارة (الاحتمالية × الأثر)", byDeptTitle:"المخاطر حسب الإدارة",
+    dashHeader:"📊 لوحة المخاطر", heatmapTitle:"مصفوفة الحرارة (الاحتمالية × الأثر)", byDeptTitle:"سجل المخاطر حسب الإدارة",
     axisImpact:"الأثر", axisLikelihood:"الاحتمالية",
     axisColCaption:"↔ الاحتمالية (الأعمدة)", axisRowCaption:"↕ الأثر (الصفوف)",
     signinRequired:"للإضافة أو التعديل، يرجى تسجيل الدخول بحساب الجامعة (@sr.edu.sa):",
@@ -516,6 +528,8 @@ const dict = {
   en:{
     siteTitle:"Institutional Risk Register", siteSub:"Sulaiman Al Rajhi University — ICT Executive Directorate",
     navHint:"Register and track your department's risks",
+    dashboardMainTitle:"Institutional Risk Indicators Dashboard",
+    toastAdded:"✅ Risk added successfully", toastUpdated:"✅ Risk updated successfully",
     statTotal:"Total Risks", statLow:"Low / Medium", statHigh:"High Risks", statCritical:"Critical Risks",
     formHeader:"➕ Register New Risk",
     lblSubmitterName:"Submitter Name", phSubmitterName:"Full name",
@@ -738,6 +752,7 @@ function applySignedInUser(){
   document.getElementById('signinGate').style.display = 'none';
   document.getElementById('signedInBar').style.display = 'flex';
   document.getElementById('signedInEmail').textContent = currentUser.email;
+  document.getElementById('riskFormCard').style.display = 'block';
 }
 
 function signOutUser(){
@@ -751,6 +766,7 @@ function signOutUser(){
   emailField.readOnly = false;
   document.getElementById('signinGate').style.display = 'flex';
   document.getElementById('signedInBar').style.display = 'none';
+  document.getElementById('riskFormCard').style.display = 'none';
   if(window.google && google.accounts && google.accounts.id){
     google.accounts.id.disableAutoSelect();
   }
@@ -837,6 +853,7 @@ async function addRisk(){
   err.style.display='none';
 
   const score = +lik * +imp;
+  const wasEdit = !!editId;
   const risk = {
     id: editId || Date.now(),
     title, dept, cat, desc, lik:+lik, imp:+imp, score, owner, response, mit, status, reviewDate, framework, evidenceUrl,
@@ -859,6 +876,7 @@ async function addRisk(){
     populateCatFilter();
     renderTable();
     updateStats();
+    showToast(wasEdit ? t.toastUpdated : t.toastAdded);
     return;
   }
 
@@ -872,6 +890,7 @@ async function addRisk(){
     document.getElementById('btnAdd').textContent = t.btnAdd;
     clearForm();
     await loadRisks();
+    showToast(wasEdit ? t.toastUpdated : t.toastAdded);
   } catch(e){
     setSyncStatus('syncErr','err');
   }
@@ -942,6 +961,14 @@ function populateCatFilter(){
   const cats = [...new Set(risks.map(r=>r.cat).filter(Boolean))];
   sel.innerHTML = `<option value="">${t.allCats}</option>` + cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   sel.value = prev;
+}
+
+function showToast(message){
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(()=>{ el.classList.remove('show'); }, 3200);
 }
 
 function escapeHtml(s){
