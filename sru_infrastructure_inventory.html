@@ -52,6 +52,7 @@
   .topbar-title{display:flex;flex-direction:column;gap:2px;z-index:1;}
   .topbar-title strong{font-size:17px;font-weight:800;letter-spacing:.3px;}
   .topbar-title span{font-size:12px;color:#d9c9f2;font-weight:500;}
+  .ver-badge{display:inline-block;margin-top:4px;align-self:flex-start;background:rgba(255,255,255,.15);color:#fff !important;font-size:11px !important;font-weight:700 !important;padding:2px 8px;border-radius:999px;letter-spacing:.5px;}
   .navbar{
     background:var(--purple);
     color:#fff;
@@ -164,6 +165,7 @@
   </div>
   <div class="topbar-title" style="text-align:left">
     <span class="sru-en">ICTD Infrastructure Inventory</span>
+    <span class="ver-badge" id="verBadge"></span>
   </div>
 </div>
 <div class="navbar no-print">
@@ -357,7 +359,8 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const TYPE_LABELS = {
+const APP_VERSION = 'v1.4'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+let TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
   Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية', Other:'أخرى'
 };
@@ -368,7 +371,7 @@ const STATUS_LABELS = {
 const WARRANTY_LABELS = {
   Covered:{ar:'ساري', cls:'active'}, Expired:{ar:'منتهي', cls:'retired'}, None:{ar:'بدون ضمان', cls:'storage'}
 };
-const EXTRA_FIELDS = {
+let EXTRA_FIELDS = {
   PC:      [['ip','عنوان IP'], ['ram','الذاكرة RAM']],
   Laptop:  [['ip','عنوان IP'], ['ram','الذاكرة RAM']],
   Screen:  [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
@@ -383,9 +386,66 @@ const EXTRA_FIELDS = {
 
 let devices = [];
 let suppliers = [];
+let typeConfig = []; // إعدادات الأنواع القادمة من الجدول (ورقة Config)
 let editingId = null;
 // Built-in endpoint: use this URL regardless of previously saved browser settings.
 let sheetUrl = 'https://script.google.com/macros/s/AKfycbxIOWPUF16hJIBlPNKzAPiKrbGZl3uBXvc1O93Q2LKxCbse5MUcSNGTQCafm6bJWpBILg/exec';
+
+// ---- type config from backend (compatible with the admin-panel backend: specs keys x1/x2) ----
+function rebuildTypeMaps(){
+  if(!typeConfig.length) return;
+  const labels = {}, extras = {};
+  typeConfig.forEach(c=>{
+    if(!c.typeKey) return;
+    labels[c.typeKey] = c.typeLabel || c.typeKey;
+    const ex = [];
+    if(c.extra1Label) ex.push(['x1', c.extra1Label]);
+    if(c.extra2Label) ex.push(['x2', c.extra2Label]);
+    extras[c.typeKey] = ex;
+  });
+  // keep built-in defaults for any type not defined in Config
+  TYPE_LABELS = Object.assign({}, TYPE_LABELS, labels);
+  EXTRA_FIELDS = Object.assign({}, EXTRA_FIELDS, extras);
+}
+function populateFormTypeSelect(){
+  const sel = document.getElementById('f_type');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">اختر النوع</option>' +
+    Object.keys(TYPE_LABELS).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(TYPE_LABELS[t])}</option>`).join('');
+  if(TYPE_LABELS[current]) sel.value = current;
+}
+// any type present in the data but missing from the maps (e.g. added directly in the sheet)
+function registerUnknownTypes(){
+  devices.forEach(d=>{ if(d.type && !TYPE_LABELS[d.type]) TYPE_LABELS[d.type] = d.type; });
+}
+
+// ---- record realignment ----
+// بعض أوراق الجدول لا تحتوي على عمود "supplier" بعد "serial"، فيُزيح الـ Backend القيم عمودًا واحدًا
+// (تظهر المواصفات تحت المورد، والمستخدم تحت الموقع، والحالة تحت المستخدم...). نكتشف ذلك ونعيد الترتيب.
+const SHIFT_KEYS = ['supplier','specs','location','user','status','date','warranty','warrantyExpiry','notes'];
+function looksLikeSpecs(v){ return typeof v==='string' && /^\s*\{[\s\S]*\}\s*$/.test(v); }
+function realignRecord(d){
+  const statusBad = d.status && !STATUS_LABELS[String(d.status).trim()];
+  if(looksLikeSpecs(d.supplier) || (statusBad && STATUS_LABELS[String(d.user||'').trim()])){
+    for(let i=SHIFT_KEYS.length-1; i>0; i--) d[SHIFT_KEYS[i]] = d[SHIFT_KEYS[i-1]];
+    d.supplier = '';
+    d._realigned = true;
+  }
+  if(d.status) d.status = String(d.status).trim();
+  if(d.warranty) d.warranty = String(d.warranty).trim();
+  d.date = fmtDate(d.date);
+  d.warrantyExpiry = fmtDate(d.warrantyExpiry);
+}
+function fmtDate(v){
+  if(!v) return '';
+  const s = String(v);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const t = new Date(s);
+  if(isNaN(t)) return s;
+  // sheet dates arrive as UTC midnight-shifted ISO strings; shift to local calendar date
+  const local = new Date(t.getTime() + 12*3600*1000);
+  return local.toISOString().slice(0,10);
+}
 
 function uid(){ return 'd'+Date.now()+Math.random().toString(16).slice(2,8); }
 
@@ -411,8 +471,21 @@ async function apiList(){
       });
     });
     suppliers = json.suppliers || [];
+    typeConfig = json.config || [];
+    rebuildTypeMaps();
+    registerUnknownTypes();
+    devices.forEach(realignRecord);
+    // normalise: specs may arrive as a JSON string from the sheet
+    devices.forEach(d=>{
+      if(typeof d.specs === 'string'){ try{ d.specs = JSON.parse(d.specs); }catch(e){ d.specs = {}; } }
+      if(!d.specs || typeof d.specs !== 'object') d.specs = {};
+    });
+    populateFormTypeSelect();
+    renderExtraFields();
+    buildExportDropdown();
     populateSupplierDatalist();
-    setSync('ok','متصل - آخر تحديث: '+ new Date().toLocaleTimeString('ar-SA'));
+    const fixed = devices.filter(d=>d._realigned).length;
+    setSync('ok','متصل - آخر تحديث: '+ new Date().toLocaleTimeString('ar-SA') + (fixed ? ` (تم تصحيح ترتيب الأعمدة تلقائيًا لـ ${fixed} سجل)` : ''));
   }catch(err){
     setSync('err','تعذر الاتصال بجوجل شيت: '+err.message);
   }
@@ -614,17 +687,24 @@ async function deleteDevice(id){
 function populateTypeFilter(){
   const sel = document.getElementById('filterType');
   const current = sel.value;
+  const types = Array.from(new Set([...Object.keys(TYPE_LABELS), ...devices.map(d=>d.type).filter(Boolean)]));
   sel.innerHTML = '<option value="">الكل</option>' +
-    Object.keys(TYPE_LABELS).map(t=>`<option value="${t}">${TYPE_LABELS[t]}</option>`).join('');
-  sel.value = current;
+    types.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(TYPE_LABELS[t]||t)}</option>`).join('');
+  sel.value = types.includes(current) ? current : '';
 }
 
 function specsToText(d){
+  const specs = (d.specs && typeof d.specs==='object') ? d.specs : {};
   const conf = EXTRA_FIELDS[d.type] || [];
-  return conf.filter(f=>f[0]).map(f=>{
-    const v = d.specs ? d.specs[f[0]] : null;
+  const used = new Set();
+  const parts = conf.filter(f=>f[0]).map(f=>{
+    used.add(f[0]);
+    const v = specs[f[0]];
     return v ? `${f[1]}: ${v}` : null;
-  }).filter(Boolean).join(' | ') || '-';
+  }).filter(Boolean);
+  // fallback: show remaining spec values whose keys are not in the current config (older records)
+  Object.keys(specs).forEach(k=>{ if(!used.has(k) && specs[k]) parts.push(`${k}: ${specs[k]}`); });
+  return parts.join(' | ') || '-';
 }
 
 function getFiltered(){
@@ -633,11 +713,12 @@ function getFiltered(){
   const fs = document.getElementById('filterStatus').value;
   const fw = document.getElementById('filterWarranty').value;
   return devices.filter(d=>{
-    if(ft && d.type!==ft) return false;
-    if(fs && d.status!==fs) return false;
-    if(fw && d.warranty!==fw) return false;
+    const norm = v => (v==null ? '' : String(v).trim());
+    if(ft && norm(d.type)!==ft) return false;
+    if(fs && norm(d.status).toLowerCase()!==fs.toLowerCase()) return false;
+    if(fw && norm(d.warranty).toLowerCase()!==fw.toLowerCase()) return false;
     if(q){
-      const hay = [d.tag,d.brand,d.model,d.serial,d.location,d.user,d.notes].join(' ').toLowerCase();
+      const hay = [d.tag,d.brand,d.model,d.serial,d.supplier,d.location,d.user,d.notes,specsToText(d)].map(v=>v==null?'':String(v)).join(' ').toLowerCase();
       if(!hay.includes(q)) return false;
     }
     return true;
@@ -747,7 +828,7 @@ function exportWorkbook(mode, singleType){
     XLSX.utils.book_append_sheet(wb, ws, (TYPE_LABELS[singleType]||singleType).slice(0,31));
   }
   const dateStr = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `SRU_Infrastructure_Inventory_${dateStr}.xlsx`);
+  XLSX.writeFile(wb, `SRU_Infrastructure_Inventory_${APP_VERSION}_${dateStr}.xlsx`);
 }
 
 function buildExportDropdown(){
@@ -780,6 +861,8 @@ document.getElementById('printBtn').addEventListener('click', ()=>window.print()
 });
 
 // init
+document.getElementById('verBadge').textContent = APP_VERSION;
+document.title = document.title + ' ' + APP_VERSION;
 renderExtraFields();
 buildExportDropdown();
 refreshSetupBanner();
