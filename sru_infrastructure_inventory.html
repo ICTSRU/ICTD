@@ -9,68 +9,30 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --purple:#501e8c;
-    --purple-dark:#3a1464;
-    --purple-light:#f0ebf8;
-    --blue:#0a6eaa;
-    --blue-light:#e6f3fa;
-    --bg:#f7f5fb;
-    --border:rgba(80,30,140,0.12);
-    --ink:#241436;
-    --muted:#6b5a80;
-    --radius:4px;
-    --green:#1a7f4b;
-    --amber:#b5750a;
-    --red:#b1272c;
-    --grey:#8a7d99;
+    --purple:#501e8c; --purple-dark:#3a1464; --purple-light:#f0ebf8;
+    --blue:#0a6eaa; --blue-light:#e6f3fa; --bg:#f7f5fb;
+    --border:rgba(80,30,140,0.12); --ink:#241436; --muted:#6b5a80; --radius:4px;
+    --green:#1a7f4b; --amber:#b5750a; --red:#b1272c; --grey:#8a7d99;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:'Cairo',Tahoma,Arial,sans-serif;
-    background:var(--bg);
-    color:var(--ink);
-    direction:rtl;
-  }
-  .topbar{
-    background:var(--purple-dark);
-    color:#fff;
-    padding:14px 28px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    position:relative;
-    overflow:hidden;
-  }
-  .topbar::after{
-    content:'';
-    position:absolute;
-    inset:0;
-    background:linear-gradient(115deg, transparent 60%, rgba(10,110,170,0.35) 60%, rgba(10,110,170,0.35) 63%, transparent 63%);
-    pointer-events:none;
-  }
+  body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);direction:rtl;}
+  .topbar{background:var(--purple-dark);color:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;}
+  .topbar::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg, transparent 60%, rgba(10,110,170,0.35) 60%, rgba(10,110,170,0.35) 63%, transparent 63%);pointer-events:none;}
   .topbar-title{display:flex;flex-direction:column;gap:2px;z-index:1;}
   .topbar-title strong{font-size:17px;font-weight:800;letter-spacing:.3px;}
   .topbar-title span{font-size:12px;color:#d9c9f2;font-weight:500;}
-  .navbar{
-    background:var(--purple);
-    color:#fff;
-    padding:0 28px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size:14px;
-    font-weight:600;
-  }
+  .ver-badge{display:inline-block;margin-top:4px;align-self:flex-start;background:rgba(255,255,255,.15);color:#fff !important;font-size:11px !important;font-weight:700 !important;padding:2px 8px;border-radius:999px;letter-spacing:.5px;}
+  .navbar{background:var(--purple);color:#fff;padding:0 28px;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;}
   .navbar .tabs{display:flex;gap:4px;}
   .navbar div.tab{padding:12px 14px;opacity:.85;border-bottom:3px solid transparent;}
   .navbar div.tab.active{opacity:1;border-bottom:3px solid #fff;}
+  .navbar-right{display:flex;align-items:center;gap:16px;}
   .sync-status{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:#e9defc;}
   .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--grey);flex:none;}
-  .sync-dot.ok{background:#3ddc84;}
-  .sync-dot.err{background:#ff6b6b;}
-  .sync-dot.busy{background:#f5c542;animation:pulse 1s infinite;}
+  .sync-dot.ok{background:#3ddc84;} .sync-dot.err{background:#ff6b6b;} .sync-dot.busy{background:#f5c542;animation:pulse 1s infinite;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .admin-toggle{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 12px;border-radius:20px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif;}
+  .admin-toggle:hover{background:rgba(255,255,255,.15);}
 
   .wrap{max-width:1200px;margin:0 auto;padding:24px 20px 60px;}
   .dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px;}
@@ -85,21 +47,13 @@
   .diag{display:inline-block;width:10px;height:10px;background:var(--blue);transform:rotate(45deg);flex:none;}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
   .field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:5px;}
-  .field input, .field select, .field textarea{
-    width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:var(--radius);
-    font-family:'Cairo',sans-serif;font-size:13.5px;color:var(--ink);background:#fff;
-  }
-  .field input:focus, .field select:focus, .field textarea:focus{
-    outline:none;border-color:var(--purple);box-shadow:0 0 0 3px var(--purple-light);
-  }
+  .field input, .field select, .field textarea{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:'Cairo',sans-serif;font-size:13.5px;color:var(--ink);background:#fff;}
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px var(--purple-light);}
   .field.wide{grid-column:1 / -1;}
+  .field small{display:block;color:var(--muted);font-size:11px;margin-top:4px;}
   .req{color:var(--red);}
 
-  .btn{
-    display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius);
-    font-family:'Cairo',sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;
-    border:1px solid var(--purple);background:var(--purple);color:#fff;transition:background .15s;
-  }
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius);font-family:'Cairo',sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;border:1px solid var(--purple);background:var(--purple);color:#fff;transition:background .15s;}
   .btn:hover{background:var(--purple-dark);}
   .btn:disabled{opacity:.6;cursor:not-allowed;}
   .btn.secondary{background:#fff;color:var(--purple);}
@@ -112,10 +66,7 @@
   .toolbar .field{min-width:160px;}
   .toolbar .grow{flex:1;min-width:200px;}
   .export-menu{position:relative;}
-  .export-dropdown{
-    display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid var(--border);
-    border-radius:var(--radius);box-shadow:0 8px 24px rgba(36,20,54,.15);min-width:220px;z-index:20;overflow:hidden;
-  }
+  .export-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(36,20,54,.15);min-width:220px;max-height:320px;overflow-y:auto;z-index:20;}
   .export-dropdown.open{display:block;}
   .export-dropdown a{display:block;padding:10px 14px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--border);}
   .export-dropdown a:last-child{border-bottom:none;}
@@ -136,14 +87,15 @@
   .table-scroll{overflow-x:auto;}
   .sru-en{unicode-bidi:isolate;direction:ltr;display:inline-block;}
 
-  .setup-banner{
-    background:#fff8e6;border:1px solid #f0d888;color:#7a5b06;border-radius:var(--radius);
-    padding:14px 16px;margin-bottom:20px;font-size:13.5px;font-weight:600;display:flex;
-    gap:12px;align-items:center;flex-wrap:wrap;
-  }
-  .setup-banner input{
-    flex:1;min-width:260px;padding:8px 10px;border:1px solid #e0c469;border-radius:var(--radius);font-family:'Cairo',sans-serif;
-  }
+  .setup-banner{background:#fff8e6;border:1px solid #f0d888;color:#7a5b06;border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;font-size:13.5px;font-weight:600;display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+  .setup-banner input{flex:1;min-width:260px;padding:8px 10px;border:1px solid #e0c469;border-radius:var(--radius);font-family:'Cairo',sans-serif;}
+
+  .admin-panel{display:none;border:2px dashed var(--purple);}
+  .admin-panel.open{display:block;}
+  .admin-list{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:16px;}
+  .admin-cat-header{background:var(--purple-light);color:var(--purple-dark);font-weight:800;font-size:12.5px;padding:8px 12px;}
+  .admin-type-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--border);font-size:13px;}
+  .admin-type-row .key{color:var(--muted);font-size:11.5px;}
 
   @media print{
     .no-print{display:none !important;}
@@ -162,15 +114,13 @@
     <strong>جرد أصول البنية التحتية</strong>
     <span>الإدارة التنفيذية للاتصالات وتقنية المعلومات - جامعة سليمان الراجحي</span>
   </div>
-  <div class="topbar-title" style="text-align:left">
-    <span class="sru-en">ICTD Infrastructure Inventory</span>
-  </div>
+  <div class="topbar-title" style="text-align:left"><span class="sru-en">ICTD Infrastructure Inventory</span><span class="ver-badge">v1.1</span></div>
 </div>
 <div class="navbar no-print">
   <div class="tabs"><div class="tab active">لوحة الجرد</div></div>
-  <div class="sync-status">
-    <span class="sync-dot" id="syncDot"></span>
-    <span id="syncText">غير متصل بجوجل شيت</span>
+  <div class="navbar-right">
+    <div class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncText">غير متصل بجوجل شيت</span></div>
+    <button class="admin-toggle" id="adminToggleBtn">⚙ لوحة التحكم</button>
   </div>
 </div>
 
@@ -182,6 +132,45 @@
     <button class="btn small" id="saveUrlBtn">حفظ الرابط</button>
   </div>
 
+  <!-- ADMIN PANEL -->
+  <div class="panel admin-panel no-print" id="adminPanel">
+    <h2><span class="diag"></span> لوحة التحكم - إدارة أنواع الأجهزة والتصنيفات</h2>
+    <p style="font-size:12.5px;color:var(--muted);margin-top:-8px;">أضف تصنيفًا رئيسيًا (قائمة رئيسية) ونوع جهاز (قائمة فرعية) جديدًا يظهر مباشرة في نموذج الإضافة. حذف نوع من هنا يخفيه من القائمة فقط ولا يحذف بياناته المسجلة سابقًا.</p>
+    <div class="grid">
+      <div class="field">
+        <label>التصنيف الرئيسي</label>
+        <select id="admin_category_select">
+          <option value="__new__">➕ تصنيف رئيسي جديد</option>
+        </select>
+      </div>
+      <div class="field" id="admin_new_category_wrap">
+        <label>اسم التصنيف الجديد</label>
+        <input id="admin_new_category" placeholder="مثال: أجهزة العروض">
+      </div>
+      <div class="field">
+        <label>مفتاح النوع (بالإنجليزية، بدون مسافات) <span class="req">*</span></label>
+        <input id="admin_type_key" placeholder="مثال: Projector">
+        <small>يُستخدم داخليًا كاسم ورقة في جوجل شيت - أحرف/أرقام إنجليزية فقط</small>
+      </div>
+      <div class="field">
+        <label>الاسم الظاهر للنوع <span class="req">*</span></label>
+        <input id="admin_type_label" placeholder="مثال: جهاز عرض (Projector)">
+      </div>
+      <div class="field">
+        <label>مواصفة إضافية 1 (اختياري)</label>
+        <input id="admin_extra1_label" placeholder="مثال: دقة العرض">
+      </div>
+      <div class="field">
+        <label>مواصفة إضافية 2 (اختياري)</label>
+        <input id="admin_extra2_label" placeholder="مثال: مدة المصباح">
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <button class="btn" id="adminAddTypeBtn">إضافة النوع</button>
+    </div>
+    <div class="admin-list" id="adminList"></div>
+  </div>
+
   <div class="dash" id="dashStats"></div>
 
   <!-- FORM PANEL -->
@@ -189,20 +178,12 @@
     <h2><span class="diag"></span> إضافة / تعديل جهاز</h2>
     <div class="grid" id="formGrid">
       <div class="field">
+        <label>التصنيف الرئيسي <span class="req">*</span></label>
+        <select id="f_category"><option value="">اختر التصنيف</option></select>
+      </div>
+      <div class="field">
         <label>نوع الجهاز <span class="req">*</span></label>
-        <select id="f_type">
-          <option value="">اختر النوع</option>
-          <option value="PC">حاسب مكتبي (PC)</option>
-          <option value="Laptop">حاسب محمول (Laptop)</option>
-          <option value="Screen">شاشة (Screen)</option>
-          <option value="Printer">طابعة (Printer)</option>
-          <option value="Switch">سويتش شبكة (Network Switch)</option>
-          <option value="UPS">UPS</option>
-          <option value="Scanner">ماسح ضوئي (Scanner)</option>
-          <option value="Accessories">ملحقات (Accessories)</option>
-          <option value="ScreenVertical">شاشة طولية (Vertical Screen)</option>
-          <option value="Other">أخرى</option>
-        </select>
+        <select id="f_type"><option value="">اختر التصنيف أولاً</option></select>
       </div>
       <div class="field">
         <label>رقم الأصل / الملصق <span class="req">*</span></label>
@@ -355,12 +336,13 @@
 </div>
 
 <script>
-const URL_KEY = 'sru_infra_sheet_url';
+// ===== الإعداد الثابت =====
+// ضع رابط Google Apps Script Web App (المنتهي بـ /exec) هنا مرة واحدة فقط.
+// عند تعبئته، لن تظهر رسالة طلب الرابط مرة أخرى على أي جهاز أو متصفح.
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxIOWPUF16hJIBlPNKzAPiKrbGZl3uBXvc1O93Q2LKxCbse5MUcSNGTQCafm6bJWpBILg/exec';
+const URL_KEY = 'sru_infra_sheet_url'; // احتياطي فقط إن تُرك SHEET_URL فارغًا
+const ADMIN_CODE = 'sru2026'; // غيّر هذا الرمز إن أردت - حماية بسيطة من جهة المتصفح فقط
 
-const TYPE_LABELS = {
-  PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
-  Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية', Other:'أخرى'
-};
 const STATUS_LABELS = {
   Active:{ar:'نشط', cls:'active'}, Storage:{ar:'في المخزن', cls:'storage'},
   Repair:{ar:'تحت الصيانة', cls:'repair'}, Retired:{ar:'خارج الخدمة', cls:'retired'}
@@ -368,25 +350,22 @@ const STATUS_LABELS = {
 const WARRANTY_LABELS = {
   Covered:{ar:'ساري', cls:'active'}, Expired:{ar:'منتهي', cls:'retired'}, None:{ar:'بدون ضمان', cls:'storage'}
 };
-const EXTRA_FIELDS = {
-  PC:      [['ip','عنوان IP'], ['ram','الذاكرة RAM']],
-  Laptop:  [['ip','عنوان IP'], ['ram','الذاكرة RAM']],
-  Screen:  [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
-  Printer: [['ip','عنوان IP'], ['toner','موديل الحبر/التونر']],
-  Switch:  [['ip','عنوان IP'], ['ports','عدد المنافذ']],
-  UPS:     [['capacity','السعة (VA)'], ['battery','حالة البطارية']],
-  Scanner: [['conn','نوع الاتصال'], ['','']],
-  Accessories: [['itemType','نوع الملحق'], ['','']],
-  ScreenVertical: [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
-  Other:   [['spec1','مواصفة 1'], ['spec2','مواصفة 2']]
-};
 
 let devices = [];
 let suppliers = [];
+let typeConfig = [];        // raw config rows from backend
+let TYPE_LABELS = {};       // typeKey -> label
+let EXTRA_FIELDS = {};      // typeKey -> [[key,label],[key,label]]
+let CATEGORIES = {};        // categoryLabel -> [typeKey,...]  (insertion order)
 let editingId = null;
-let sheetUrl = localStorage.getItem(URL_KEY) || '';
+let adminUnlocked = false;
+let sheetUrl = SHEET_URL || localStorage.getItem(URL_KEY) || '';
 
 function uid(){ return 'd'+Date.now()+Math.random().toString(16).slice(2,8); }
+function escapeHtml(s){
+  if(s===undefined||s===null) return '';
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 // ---- connection status ----
 function setSync(state, text){
@@ -395,7 +374,7 @@ function setSync(state, text){
   document.getElementById('syncText').textContent = text;
 }
 
-// ---- API calls to Apps Script ----
+// ---- API calls ----
 async function apiList(){
   if(!sheetUrl) return;
   setSync('busy','جارٍ التحميل من جوجل شيت...');
@@ -403,14 +382,22 @@ async function apiList(){
     const res = await fetch(sheetUrl, {method:'GET'});
     const json = await res.json();
     if(!json.success) throw new Error(json.error || 'فشل التحميل');
+
     devices = [];
     Object.keys(json.data).forEach(type=>{
-      json.data[type].forEach(rec=>{
-        devices.push(Object.assign({type:type}, rec));
-      });
+      json.data[type].forEach(rec=>{ devices.push(Object.assign({type:type}, rec)); });
     });
     suppliers = json.suppliers || [];
+    typeConfig = json.config || [];
+    rebuildTypeMaps();
+    populateCategorySelect();
+    populateTypeSubmenu();
+    populateFilterTypeSelect();
     populateSupplierDatalist();
+    buildExportDropdown();
+    renderAdminList();
+    populateAdminCategorySelect();
+
     setSync('ok','متصل - آخر تحديث: '+ new Date().toLocaleTimeString('ar-SA'));
   }catch(err){
     setSync('err','تعذر الاتصال بجوجل شيت: '+err.message);
@@ -419,10 +406,7 @@ async function apiList(){
 }
 
 async function apiWrite(action, record, idForDelete){
-  if(!sheetUrl){
-    alert('الرجاء إدخال رابط Google Apps Script Web App أولاً.');
-    return false;
-  }
+  if(!sheetUrl){ alert('الرجاء إدخال رابط Google Apps Script Web App أولاً.'); return false; }
   setSync('busy','جارٍ الحفظ في جوجل شيت...');
   try{
     const body = action==='delete'
@@ -430,7 +414,7 @@ async function apiWrite(action, record, idForDelete){
       : {action, type: record.type, record};
     const res = await fetch(sheetUrl, {
       method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'}, // avoids CORS preflight on Apps Script
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(body)
     });
     const json = await res.json();
@@ -444,15 +428,112 @@ async function apiWrite(action, record, idForDelete){
   }
 }
 
+async function apiAddType(payload){
+  if(!sheetUrl){ alert('الرجاء ربط الصفحة بجوجل شيت أولاً.'); return false; }
+  try{
+    const res = await fetch(sheetUrl, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({action:'addType'}, payload))
+    });
+    const json = await res.json();
+    if(!json.success){ alert('تعذر إضافة النوع: '+json.error); return false; }
+    return true;
+  }catch(err){ alert('تعذر إضافة النوع: '+err.message); return false; }
+}
+
+async function apiDeleteType(typeKey){
+  try{
+    const res = await fetch(sheetUrl, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'deleteType', typeKey})
+    });
+    const json = await res.json();
+    if(!json.success){ alert('تعذر حذف النوع: '+json.error); return false; }
+    return true;
+  }catch(err){ alert('تعذر حذف النوع: '+err.message); return false; }
+}
+
+// ---- type/category maps ----
+function rebuildTypeMaps(){
+  TYPE_LABELS = {}; EXTRA_FIELDS = {}; CATEGORIES = {};
+  typeConfig.forEach(c=>{
+    TYPE_LABELS[c.typeKey] = c.typeLabel;
+    const extras = [];
+    if(c.extra1Label) extras.push(['x1', c.extra1Label]);
+    if(c.extra2Label) extras.push(['x2', c.extra2Label]);
+    EXTRA_FIELDS[c.typeKey] = extras;
+    const cat = c.categoryLabel || 'أخرى';
+    if(!CATEGORIES[cat]) CATEGORIES[cat] = [];
+    CATEGORIES[cat].push(c.typeKey);
+  });
+}
+
+function populateCategorySelect(){
+  const sel = document.getElementById('f_category');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">اختر التصنيف</option>' +
+    Object.keys(CATEGORIES).map(cat=>`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
+  if(Object.keys(CATEGORIES).includes(current)) sel.value = current;
+}
+
+function populateTypeSubmenu(){
+  const cat = document.getElementById('f_category').value;
+  const sel = document.getElementById('f_type');
+  const current = sel.value;
+  const types = CATEGORIES[cat] || [];
+  if(!cat){
+    sel.innerHTML = '<option value="">اختر التصنيف أولاً</option>';
+  } else {
+    sel.innerHTML = '<option value="">اختر النوع</option>' +
+      types.map(t=>`<option value="${t}">${escapeHtml(TYPE_LABELS[t]||t)}</option>`).join('');
+    if(types.includes(current)) sel.value = current;
+    else if(types.length===1) sel.value = types[0];
+  }
+  renderExtraFields();
+}
+document.getElementById('f_category').addEventListener('change', populateTypeSubmenu);
+document.getElementById('f_type').addEventListener('change', renderExtraFields);
+
+function populateFilterTypeSelect(){
+  const sel = document.getElementById('filterType');
+  const current = sel.value;
+  let html = '<option value="">الكل</option>';
+  Object.keys(CATEGORIES).forEach(cat=>{
+    html += `<optgroup label="${escapeHtml(cat)}">`;
+    CATEGORIES[cat].forEach(t=>{
+      html += `<option value="${t}">${escapeHtml(TYPE_LABELS[t]||t)}</option>`;
+    });
+    html += `</optgroup>`;
+  });
+  sel.innerHTML = html;
+  sel.value = current;
+}
+
+// ---- form extra fields ----
+function renderExtraFields(){
+  const t = document.getElementById('f_type').value;
+  const conf = EXTRA_FIELDS[t] || [];
+  [1,2].forEach((n,i)=>{
+    const wrap = document.getElementById('f_extra'+n+'_wrap');
+    const label = document.getElementById('f_extra'+n+'_label');
+    const field = conf[i];
+    if(field){
+      wrap.style.display='block'; label.textContent = field[1]; wrap.dataset.key = field[0];
+    } else {
+      wrap.style.display='none'; wrap.dataset.key=''; document.getElementById('f_extra'+n).value='';
+    }
+  });
+}
+
 // ---- supplier autofill ----
 function populateSupplierDatalist(){
   const dl = document.getElementById('supplierNamesList');
   const seen = {};
   dl.innerHTML = suppliers.filter(s=>{
     const k = (s.name||'').trim().toLowerCase();
-    if(!k || seen[k]) return false;
-    seen[k]=true;
-    return true;
+    if(!k || seen[k]) return false; seen[k]=true; return true;
   }).map(s=>`<option value="${escapeHtml(s.name)}"></option>`).join('');
 }
 function findSupplier(name){
@@ -461,8 +542,7 @@ function findSupplier(name){
   return suppliers.find(s=> (s.name||'').trim().toLowerCase() === key) || null;
 }
 function autofillSupplier(){
-  const name = document.getElementById('f_supplier').value;
-  const match = findSupplier(name);
+  const match = findSupplier(document.getElementById('f_supplier').value);
   if(match){
     document.getElementById('f_supplier_contact_name').value = match.contactName || '';
     document.getElementById('f_supplier_email').value = match.email || '';
@@ -475,53 +555,100 @@ document.getElementById('f_supplier').addEventListener('change', autofillSupplie
 // ---- setup banner ----
 function refreshSetupBanner(){
   const banner = document.getElementById('setupBanner');
-  const input = document.getElementById('sheetUrlInput');
-  if(sheetUrl){
-    banner.style.display='none';
-  } else {
-    banner.style.display='flex';
-  }
-  input.value = sheetUrl;
+  document.getElementById('sheetUrlInput').value = sheetUrl;
+  banner.style.display = (SHEET_URL || sheetUrl) ? 'none' : 'flex';
 }
 document.getElementById('saveUrlBtn').addEventListener('click', ()=>{
   const v = document.getElementById('sheetUrlInput').value.trim();
   if(!v){ alert('الرجاء إدخال رابط صحيح.'); return; }
-  sheetUrl = v;
-  localStorage.setItem(URL_KEY, v);
-  refreshSetupBanner();
-  apiList();
+  sheetUrl = v; localStorage.setItem(URL_KEY, v);
+  refreshSetupBanner(); apiList();
 });
 document.getElementById('refreshBtn').addEventListener('click', apiList);
 
-// ---- form extra fields ----
-const typeSelect = document.getElementById('f_type');
-typeSelect.addEventListener('change', renderExtraFields);
-function renderExtraFields(){
-  const t = typeSelect.value;
-  const conf = EXTRA_FIELDS[t] || [];
-  [1,2].forEach((n,i)=>{
-    const wrap = document.getElementById('f_extra'+n+'_wrap');
-    const label = document.getElementById('f_extra'+n+'_label');
-    const field = conf[i];
-    if(field && field[0]){
-      wrap.style.display='block';
-      label.textContent = field[1];
-      wrap.dataset.key = field[0];
-    } else {
-      wrap.style.display='none';
-      wrap.dataset.key='';
-      document.getElementById('f_extra'+n).value='';
-    }
-  });
+// ---- admin panel ----
+document.getElementById('adminToggleBtn').addEventListener('click', ()=>{
+  const panel = document.getElementById('adminPanel');
+  if(panel.classList.contains('open')){ panel.classList.remove('open'); return; }
+  if(!adminUnlocked){
+    const code = prompt('الرجاء إدخال رمز الدخول للوحة التحكم:');
+    if(code !== ADMIN_CODE){ if(code!==null) alert('رمز غير صحيح.'); return; }
+    adminUnlocked = true;
+  }
+  panel.classList.add('open');
+  panel.scrollIntoView({behavior:'smooth'});
+});
+
+document.getElementById('admin_category_select').addEventListener('change', function(){
+  document.getElementById('admin_new_category_wrap').style.display = this.value==='__new__' ? 'block' : 'none';
+});
+function populateAdminCategorySelect(){
+  const sel = document.getElementById('admin_category_select');
+  const current = sel.value;
+  sel.innerHTML = Object.keys(CATEGORIES).map(cat=>`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('') +
+    '<option value="__new__">➕ تصنيف رئيسي جديد</option>';
+  if(current && Object.keys(CATEGORIES).includes(current)) sel.value = current;
+  document.getElementById('admin_new_category_wrap').style.display = sel.value==='__new__' ? 'block' : 'none';
 }
 
+function renderAdminList(){
+  const box = document.getElementById('adminList');
+  if(Object.keys(CATEGORIES).length===0){ box.innerHTML = ''; return; }
+  let html = '';
+  Object.keys(CATEGORIES).forEach(cat=>{
+    html += `<div class="admin-cat-header">${escapeHtml(cat)}</div>`;
+    CATEGORIES[cat].forEach(t=>{
+      html += `<div class="admin-type-row">
+        <div>${escapeHtml(TYPE_LABELS[t]||t)} <span class="key sru-en">(${t})</span></div>
+        <button class="btn small danger" onclick="deleteTypeAdmin('${t}')">حذف</button>
+      </div>`;
+    });
+  });
+  box.innerHTML = html;
+}
+
+async function deleteTypeAdmin(typeKey){
+  if(!confirm('حذف هذا النوع من القائمة؟ (بيانات الأجهزة المسجلة سابقًا من هذا النوع لن تُحذف)')) return;
+  const ok = await apiDeleteType(typeKey);
+  if(ok) await apiList();
+}
+
+document.getElementById('adminAddTypeBtn').addEventListener('click', async ()=>{
+  const catSel = document.getElementById('admin_category_select').value;
+  const categoryLabel = catSel==='__new__'
+    ? document.getElementById('admin_new_category').value.trim()
+    : catSel;
+  const typeKey = document.getElementById('admin_type_key').value.trim();
+  const typeLabel = document.getElementById('admin_type_label').value.trim();
+  const extra1Label = document.getElementById('admin_extra1_label').value.trim();
+  const extra2Label = document.getElementById('admin_extra2_label').value.trim();
+
+  if(!categoryLabel){ alert('الرجاء إدخال أو اختيار التصنيف الرئيسي.'); return; }
+  if(!/^[A-Za-z0-9_]{1,40}$/.test(typeKey)){ alert('مفتاح النوع يجب أن يكون بالإنجليزية بدون مسافات (أحرف/أرقام/_ فقط).'); return; }
+  if(!typeLabel){ alert('الرجاء إدخال الاسم الظاهر للنوع.'); return; }
+  if(TYPE_LABELS[typeKey]){ alert('هذا المفتاح مستخدم بالفعل.'); return; }
+
+  const btn = document.getElementById('adminAddTypeBtn');
+  btn.disabled = true;
+  const ok = await apiAddType({categoryLabel, typeKey, typeLabel, extra1Label, extra2Label});
+  btn.disabled = false;
+  if(ok){
+    ['admin_new_category','admin_type_key','admin_type_label','admin_extra1_label','admin_extra2_label'].forEach(id=>{
+      document.getElementById(id).value='';
+    });
+    await apiList();
+  }
+});
+
+// ---- form save/edit/delete ----
 function clearForm(){
-  ['f_type','f_tag','f_brand','f_model','f_serial','f_supplier','f_supplier_contact_name','f_supplier_email','f_supplier_phone','f_extra1','f_extra2','f_location','f_user','f_date','f_notes','f_warranty_expiry'].forEach(id=>{
+  ['f_tag','f_brand','f_model','f_serial','f_supplier','f_supplier_contact_name','f_supplier_email','f_supplier_phone','f_extra1','f_extra2','f_location','f_user','f_date','f_notes','f_warranty_expiry'].forEach(id=>{
     document.getElementById(id).value='';
   });
+  document.getElementById('f_category').value='';
+  populateTypeSubmenu();
   document.getElementById('f_status').value='Active';
   document.getElementById('f_warranty').value='Covered';
-  renderExtraFields();
   editingId = null;
   document.getElementById('saveBtn').textContent = 'حفظ الجهاز';
 }
@@ -532,7 +659,7 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   const tag = document.getElementById('f_tag').value.trim();
   const location = document.getElementById('f_location').value.trim();
   if(!type || !tag || !location){
-    alert('الرجاء تعبئة الحقول الإلزامية: نوع الجهاز، رقم الأصل، الموقع.');
+    alert('الرجاء تعبئة الحقول الإلزامية: التصنيف/النوع، رقم الأصل، الموقع.');
     return;
   }
   const extra1wrap = document.getElementById('f_extra1_wrap');
@@ -542,8 +669,7 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   if(extra2wrap.dataset.key) specs[extra2wrap.dataset.key] = document.getElementById('f_extra2').value.trim();
 
   const record = {
-    id: editingId || uid(),
-    type, tag,
+    id: editingId || uid(), type, tag,
     brand: document.getElementById('f_brand').value.trim(),
     model: document.getElementById('f_model').value.trim(),
     serial: document.getElementById('f_serial').value.trim(),
@@ -565,17 +691,18 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   btn.disabled = true;
   const ok = await apiWrite(editingId ? 'update' : 'add', record);
   btn.disabled = false;
-  if(ok){
-    clearForm();
-    await apiList();
-  }
+  if(ok){ clearForm(); await apiList(); }
 });
 
 function editDevice(id){
   const d = devices.find(x=>x.id===id);
   if(!d) return;
+  const cfg = typeConfig.find(c=>c.typeKey===d.type);
+  document.getElementById('f_category').value = cfg ? cfg.categoryLabel : '';
+  populateTypeSubmenu();
   document.getElementById('f_type').value = d.type;
   renderExtraFields();
+
   document.getElementById('f_tag').value = d.tag;
   document.getElementById('f_brand').value = d.brand;
   document.getElementById('f_model').value = d.model;
@@ -585,10 +712,12 @@ function editDevice(id){
   document.getElementById('f_supplier_contact_name').value = (sup && sup.contactName) || '';
   document.getElementById('f_supplier_email').value = (sup && sup.email) || '';
   document.getElementById('f_supplier_phone').value = (sup && sup.phone) || '';
+
   const extra1wrap = document.getElementById('f_extra1_wrap');
   const extra2wrap = document.getElementById('f_extra2_wrap');
   if(extra1wrap.dataset.key) document.getElementById('f_extra1').value = (d.specs && d.specs[extra1wrap.dataset.key]) || '';
   if(extra2wrap.dataset.key) document.getElementById('f_extra2').value = (d.specs && d.specs[extra2wrap.dataset.key]) || '';
+
   document.getElementById('f_location').value = d.location;
   document.getElementById('f_user').value = d.user;
   document.getElementById('f_status').value = d.status;
@@ -596,6 +725,7 @@ function editDevice(id){
   document.getElementById('f_notes').value = d.notes;
   document.getElementById('f_warranty').value = d.warranty || 'Covered';
   document.getElementById('f_warranty_expiry').value = d.warrantyExpiry || '';
+
   editingId = id;
   document.getElementById('saveBtn').textContent = 'تحديث الجهاز';
   window.scrollTo({top:0, behavior:'smooth'});
@@ -609,18 +739,10 @@ async function deleteDevice(id){
   if(ok) await apiList();
 }
 
-// ---- filters ----
-function populateTypeFilter(){
-  const sel = document.getElementById('filterType');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">الكل</option>' +
-    Object.keys(TYPE_LABELS).map(t=>`<option value="${t}">${TYPE_LABELS[t]}</option>`).join('');
-  sel.value = current;
-}
-
+// ---- filters / table ----
 function specsToText(d){
   const conf = EXTRA_FIELDS[d.type] || [];
-  return conf.filter(f=>f[0]).map(f=>{
+  return conf.map(f=>{
     const v = d.specs ? d.specs[f[0]] : null;
     return v ? `${f[1]}: ${v}` : null;
   }).filter(Boolean).join(' | ') || '-';
@@ -636,7 +758,7 @@ function getFiltered(){
     if(fs && d.status!==fs) return false;
     if(fw && d.warranty!==fw) return false;
     if(q){
-      const hay = [d.tag,d.brand,d.model,d.serial,d.location,d.user,d.notes].join(' ').toLowerCase();
+      const hay = [d.tag,d.brand,d.model,d.serial,d.location,d.user,d.notes,d.supplier].join(' ').toLowerCase();
       if(!hay.includes(q)) return false;
     }
     return true;
@@ -647,17 +769,13 @@ function renderTable(){
   const list = getFiltered();
   const tbody = document.getElementById('tbody');
   const emptyMsg = document.getElementById('emptyMsg');
-  if(list.length===0){
-    tbody.innerHTML='';
-    emptyMsg.style.display='block';
-    return;
-  }
+  if(list.length===0){ tbody.innerHTML=''; emptyMsg.style.display='block'; return; }
   emptyMsg.style.display='none';
   tbody.innerHTML = list.map(d=>{
     const st = STATUS_LABELS[d.status] || {ar:d.status,cls:''};
     const wr = WARRANTY_LABELS[d.warranty] || {ar:d.warranty||'-',cls:''};
     return `<tr>
-      <td><span class="chip type">${TYPE_LABELS[d.type]||d.type}</span></td>
+      <td><span class="chip type">${escapeHtml(TYPE_LABELS[d.type]||d.type)}</span></td>
       <td><span class="sru-en">${escapeHtml(d.tag)}</span></td>
       <td>${escapeHtml(d.brand)} ${escapeHtml(d.model)}</td>
       <td>${escapeHtml(d.supplier)||'-'}</td>
@@ -680,11 +798,6 @@ function renderTable(){
   }).join('');
 }
 
-function escapeHtml(s){
-  if(s===undefined||s===null) return '';
-  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
 function renderDash(){
   const total = devices.length;
   const byType = {};
@@ -699,16 +812,12 @@ function renderDash(){
   html += `<div class="stat"><div class="num">${expiredWarranty}</div><div class="lbl">ضمان منتهي</div></div>`;
   const topTypes = Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,3);
   topTypes.forEach(([t,c])=>{
-    html += `<div class="stat"><div class="num">${c}</div><div class="lbl">${TYPE_LABELS[t]||t}</div></div>`;
+    html += `<div class="stat"><div class="num">${c}</div><div class="lbl">${escapeHtml(TYPE_LABELS[t]||t)}</div></div>`;
   });
   document.getElementById('dashStats').innerHTML = html;
 }
 
-function renderAll(){
-  populateTypeFilter();
-  renderDash();
-  renderTable();
-}
+function renderAll(){ renderDash(); renderTable(); }
 
 // ---- export ----
 function buildSheetData(list){
@@ -737,7 +846,7 @@ function exportWorkbook(mode, singleType){
       const list = devices.filter(d=>d.type===t);
       if(list.length===0) return;
       const ws = XLSX.utils.aoa_to_sheet(buildSheetData(list));
-      XLSX.utils.book_append_sheet(wb, ws, TYPE_LABELS[t].slice(0,31));
+      XLSX.utils.book_append_sheet(wb, ws, (TYPE_LABELS[t]||t).slice(0,31));
     });
   } else if(mode==='single-type'){
     const list = devices.filter(d=>d.type===singleType);
@@ -753,8 +862,10 @@ function buildExportDropdown(){
   const dd = document.getElementById('exportDropdown');
   let html = `<a data-mode="by-type-all">تصدير الكل (ورقة لكل نوع)</a>`;
   html += `<a data-mode="all-in-one">تصدير الكل (ورقة واحدة)</a>`;
-  Object.keys(TYPE_LABELS).forEach(t=>{
-    html += `<a data-mode="single-type" data-type="${t}">تصدير: ${TYPE_LABELS[t]} فقط</a>`;
+  Object.keys(CATEGORIES).forEach(cat=>{
+    CATEGORIES[cat].forEach(t=>{
+      html += `<a data-mode="single-type" data-type="${t}">تصدير: ${escapeHtml(TYPE_LABELS[t]||t)} فقط</a>`;
+    });
   });
   dd.innerHTML = html;
   dd.querySelectorAll('a').forEach(a=>{
@@ -768,9 +879,7 @@ document.getElementById('exportToggle').addEventListener('click', (e)=>{
   document.getElementById('exportDropdown').classList.toggle('open');
   e.stopPropagation();
 });
-document.addEventListener('click', ()=>{
-  document.getElementById('exportDropdown').classList.remove('open');
-});
+document.addEventListener('click', ()=>{ document.getElementById('exportDropdown').classList.remove('open'); });
 document.getElementById('printBtn').addEventListener('click', ()=>window.print());
 
 ['searchBox','filterType','filterStatus','filterWarranty'].forEach(id=>{
@@ -779,8 +888,6 @@ document.getElementById('printBtn').addEventListener('click', ()=>window.print()
 });
 
 // init
-renderExtraFields();
-buildExportDropdown();
 refreshSetupBanner();
 renderAll();
 if(sheetUrl) apiList();
