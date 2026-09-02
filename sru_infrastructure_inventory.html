@@ -384,7 +384,8 @@ const EXTRA_FIELDS = {
 let devices = [];
 let suppliers = [];
 let editingId = null;
-let sheetUrl = localStorage.getItem(URL_KEY) || '';
+// Built-in endpoint: use this URL regardless of previously saved browser settings.
+let sheetUrl = 'https://script.google.com/macros/s/AKfycbxIOWPUF16hJIBlPNKzAPiKrbGZl3uBXvc1O93Q2LKxCbse5MUcSNGTQCafm6bJWpBILg/exec';
 
 function uid(){ return 'd'+Date.now()+Math.random().toString(16).slice(2,8); }
 
