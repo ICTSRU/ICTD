@@ -283,6 +283,12 @@
         <label>تاريخ انتهاء الضمان</label>
         <input id="f_warranty_expiry" type="date">
       </div>
+      <div class="field">
+        <label>تمت الإضافة بواسطة</label>
+        <select id="f_added_by">
+          <option value="">اختر الاسم</option>
+        </select>
+      </div>
       <div class="field wide">
         <label>ملاحظات</label>
         <textarea id="f_notes" rows="2" placeholder="أي تفاصيل إضافية..."></textarea>
@@ -348,6 +354,7 @@
             <th>الحالة</th>
             <th>تاريخ الشراء</th>
             <th>الضمان</th>
+            <th>تمت الإضافة بواسطة</th>
             <th class="no-print">إجراءات</th>
           </tr>
         </thead>
@@ -362,11 +369,13 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const APP_VERSION = 'v1.7'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+const APP_VERSION = 'v1.9'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
 let TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
   Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية',
-  MicrosoftService:'مايكروسوفت سيرفس', Other:'أخرى'
+  MicrosoftService:'مايكروسوفت سيرفس',
+  HallScreen:'شاشة قاعة', NetworkReceivers:'لواقط شبكة', Firewall:'جدار حماية', LargeScreens:'شاشات كبرى',
+  Other:'أخرى'
 };
 const STATUS_LABELS = {
   Active:{ar:'نشط', cls:'active'}, Storage:{ar:'في المخزن', cls:'storage'},
@@ -383,16 +392,27 @@ let EXTRA_FIELDS = {
   Switch:  [['ip','عنوان IP'], ['ports','عدد المنافذ']],
   UPS:     [['capacity','السعة (VA)'], ['battery','حالة البطارية']],
   Scanner: [['conn','نوع الاتصال'], ['','']],
-  Accessories: [['itemType','نوع الملحق'], ['','']],
+  Accessories: [['itemName','اسم الملحق'], ['','']],
   ScreenVertical: [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
   MicrosoftService: [['licenseType','نوع الترخيص'], ['expiryDate','تاريخ الانتهاء']],
-  Other:   [['spec1','مواصفة 1'], ['spec2','مواصفة 2']]
+  HallScreen: [['size','حجم الشاشة (بوصة)'], ['hallName','اسم/رقم القاعة']],
+  NetworkReceivers: [['ip','عنوان IP'], ['ssid','اسم الشبكة SSID']],
+  Firewall: [['ip','عنوان IP'], ['ports','عدد المنافذ']],
+  LargeScreens: [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
+  Other:   [['otherName','اسم النوع (أخرى)'], ['spec2','مواصفة إضافية']]
 };
 
 // بادئة رقم الأصل لكل نوع جهاز — تُستخدم لتوليد الرقم تلقائيًا
+// قائمة الأسماء لخانة "تمت الإضافة بواسطة"
+const ADDED_BY_NAMES = [
+  'Dr. Nasser Abounar','Mohamed ElMahdy','Mohamed Nawaz','Mohamed Omar','Mohamed Saleh',
+  'Ammar Alrowedan','Nayed Alrashidi','Abd Alazez Alawaji','Azzam Alaqeel','Asma Alolayan',
+  'Shath Albusyli','Inshrah Almutairi','عاطف النادي','سراج'
+];
 const TAG_PREFIXES = {
   PC:'PC', Laptop:'LT', Screen:'SR', Printer:'PR', Switch:'SW', UPS:'UPS',
-  Scanner:'SC', Accessories:'AC', ScreenVertical:'SRV', MicrosoftService:'MS', Other:'OT'
+  Scanner:'SC', Accessories:'AC', ScreenVertical:'SRV', MicrosoftService:'MS',
+  HallScreen:'HS', NetworkReceivers:'AP', Firewall:'FW', LargeScreens:'LS', Other:'OT'
 };
 // يولّد رقم الأصل التالي بناءً على أعلى رقم مستخدم فعليًا لنفس النوع في البيانات المحمّلة
 function nextTagFor(type){
@@ -412,6 +432,12 @@ function autoFillTag(){
   document.getElementById('f_tag').value = type ? nextTagFor(type) : '';
 }
 document.getElementById('regenTagBtn').addEventListener('click', autoFillTag);
+function populateAddedBySelect(){
+  const sel = document.getElementById('f_added_by');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">اختر الاسم</option>' + ADDED_BY_NAMES.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+  sel.value = current;
+}
 
 let devices = [];
 let suppliers = [];
@@ -620,7 +646,7 @@ function renderExtraFields(){
 }
 
 function clearForm(){
-  ['f_type','f_tag','f_brand','f_model','f_serial','f_supplier','f_supplier_contact_name','f_supplier_email','f_supplier_phone','f_extra1','f_extra2','f_location','f_user','f_date','f_notes','f_warranty_expiry'].forEach(id=>{
+  ['f_type','f_tag','f_brand','f_model','f_serial','f_supplier','f_supplier_contact_name','f_supplier_email','f_supplier_phone','f_extra1','f_extra2','f_location','f_user','f_date','f_notes','f_warranty_expiry','f_added_by'].forEach(id=>{
     document.getElementById(id).value='';
   });
   document.getElementById('f_status').value='Active';
@@ -664,7 +690,8 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     date: document.getElementById('f_date').value,
     notes: document.getElementById('f_notes').value.trim(),
     warranty: document.getElementById('f_warranty').value,
-    warrantyExpiry: document.getElementById('f_warranty_expiry').value
+    warrantyExpiry: document.getElementById('f_warranty_expiry').value,
+    addedBy: document.getElementById('f_added_by').value
   };
 
   const btn = document.getElementById('saveBtn');
@@ -700,6 +727,7 @@ function editDevice(id){
   document.getElementById('f_status').value = d.status;
   document.getElementById('f_date').value = d.date;
   document.getElementById('f_notes').value = d.notes;
+  document.getElementById('f_added_by').value = d.addedBy || '';
   document.getElementById('f_warranty').value = d.warranty || 'Covered';
   document.getElementById('f_warranty_expiry').value = d.warrantyExpiry || '';
   editingId = id;
@@ -784,6 +812,7 @@ function renderTable(){
         <span class="chip ${wr.cls}">${wr.ar}</span>
         ${d.warrantyExpiry ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;"><span class="sru-en">${d.warrantyExpiry}</span></div>` : ''}
       </td>
+      <td>${escapeHtml(d.addedBy)||'-'}</td>
       <td class="no-print">
         <div class="row-actions">
           <button class="btn small secondary" onclick="editDevice('${d.id}')">تعديل</button>
@@ -826,7 +855,7 @@ function renderAll(){
 
 // ---- export ----
 function buildSheetData(list){
-  const header = ['نوع الجهاز','رقم الأصل','الشركة المصنعة','الموديل','الرقم التسلسلي','الشركة الموردة','اسم مسؤول التواصل','البريد الإلكتروني','رقم الهاتف','المواصفات','الموقع/القسم','المستخدم المسؤول','الحالة','تاريخ الشراء','حالة الضمان','تاريخ انتهاء الضمان','ملاحظات'];
+  const header = ['نوع الجهاز','رقم الأصل','الشركة المصنعة','الموديل','الرقم التسلسلي','الشركة الموردة','اسم مسؤول التواصل','البريد الإلكتروني','رقم الهاتف','المواصفات','الموقع/القسم','المستخدم المسؤول','الحالة','تاريخ الشراء','حالة الضمان','تاريخ انتهاء الضمان','تمت الإضافة بواسطة','ملاحظات'];
   const rows = list.map(d=>{
     const sup = findSupplier(d.supplier) || {};
     return [
@@ -834,7 +863,7 @@ function buildSheetData(list){
       d.supplier, sup.contactName, sup.email, sup.phone,
       specsToText(d), d.location, d.user,
       (STATUS_LABELS[d.status]||{ar:d.status}).ar, d.date,
-      (WARRANTY_LABELS[d.warranty]||{ar:d.warranty||'-'}).ar, d.warrantyExpiry, d.notes
+      (WARRANTY_LABELS[d.warranty]||{ar:d.warranty||'-'}).ar, d.warrantyExpiry, d.addedBy, d.notes
     ];
   });
   return [header, ...rows];
@@ -896,6 +925,7 @@ document.getElementById('printBtn').addEventListener('click', ()=>window.print()
 document.getElementById('verBadge').textContent = APP_VERSION;
 document.title = document.title + ' ' + APP_VERSION;
 renderExtraFields();
+populateAddedBySelect();
 buildExportDropdown();
 refreshSetupBanner();
 renderAll();

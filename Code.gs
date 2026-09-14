@@ -8,8 +8,8 @@
  *    The Web app URL does not change.
  */
 
-const TYPES = ['PC','Laptop','Screen','Printer','Switch','UPS','Scanner','Accessories','ScreenVertical','MicrosoftService','Other'];
-const HEADERS = ['ID','Tag','Brand','Model','Serial','Supplier','Specs','Location','User','Status','Date','Notes','Warranty','WarrantyExpiry','UpdatedAt'];
+const TYPES = ['PC','Laptop','Screen','Printer','Switch','UPS','Scanner','Accessories','ScreenVertical','MicrosoftService','HallScreen','NetworkReceivers','Firewall','LargeScreens','Other'];
+const HEADERS = ['ID','Tag','Brand','Model','Serial','Supplier','Specs','Location','User','Status','Date','Notes','Warranty','WarrantyExpiry','UpdatedAt','AddedBy'];
 const SUPPLIER_HEADERS = ['SupplierName','ContactName','Email','Phone','UpdatedAt'];
 
 function doGet(e) {
@@ -36,16 +36,16 @@ function doPost(e) {
 
     if (action === 'add') {
       const r = payload.record;
-      sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString()]);
+      sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy]);
       upsertSupplier(ss, r.supplier, r.supplierContactName, r.supplierEmail, r.supplierPhone);
 
     } else if (action === 'update') {
       const r = payload.record;
       const rowIndex = findRowById(sheet, r.id);
       if (rowIndex > -1) {
-        sheet.getRange(rowIndex, 1, 1, HEADERS.length).setValues([[r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString()]]);
+        sheet.getRange(rowIndex, 1, 1, HEADERS.length).setValues([[r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy]]);
       } else {
-        sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString()]);
+        sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy]);
       }
       upsertSupplier(ss, r.supplier, r.supplierContactName, r.supplierEmail, r.supplierPhone);
 
@@ -69,6 +69,12 @@ function getOrCreateSheet(ss, type) {
     sheet = ss.insertSheet(type);
     sheet.appendRow(HEADERS);
     sheet.setFrozenRows(1);
+  } else {
+    // إن كانت الورقة قديمة ولا تملك عمود AddedBy، نضيفه في آخر عمود فقط دون أي إزاحة للبيانات الحالية
+    const lastCol = sheet.getLastColumn();
+    if (lastCol < HEADERS.length) {
+      sheet.getRange(1, HEADERS.length).setValue('AddedBy');
+    }
   }
   return sheet;
 }
@@ -86,7 +92,8 @@ function readSheet(sheet) {
         date: r[10] instanceof Date ? Utilities.formatDate(r[10], Session.getScriptTimeZone(), 'yyyy-MM-dd') : r[10],
         notes: r[11],
         warranty: r[12],
-        warrantyExpiry: r[13] instanceof Date ? Utilities.formatDate(r[13], Session.getScriptTimeZone(), 'yyyy-MM-dd') : r[13]
+        warrantyExpiry: r[13] instanceof Date ? Utilities.formatDate(r[13], Session.getScriptTimeZone(), 'yyyy-MM-dd') : r[13],
+        addedBy: r[15]
       };
     });
 }

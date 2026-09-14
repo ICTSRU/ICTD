@@ -5,6 +5,41 @@ All versions are listed newest first. Each release folder is named `vX.Y` and co
 
 ---
 
+## v1.9 — 2026-09-02
+**Base:** v1.8. Not yet approved — test before adopting.
+
+### Added — "تمت الإضافة بواسطة"
+- New dropdown field in the form: **تمت الإضافة بواسطة**, listing:
+  Dr. Nasser Abounar, Mohamed ElMahdy, Mohamed Nawaz, Mohamed Omar, Mohamed Saleh,
+  Ammar Alrowedan, Nayed Alrashidi, Abd Alazez Alawaji, Azzam Alaqeel, Asma Alolayan,
+  Shath Albusyli, Inshrah Almutairi, عاطف النادي, سراج.
+- Shown as a new column in the table, included in Excel exports, and preserved when editing a device.
+- `Code.gs`: new `AddedBy` column appended **after `UpdatedAt`, at the very end** of `HEADERS` — deliberately placed last, not inserted in the middle, so existing rows in already-deployed sheets are never shifted (the same misalignment bug fixed in v1.5/v1.6 era). For sheets created before this version, the header label is added automatically to the next empty column on first use; existing data is untouched.
+
+### Deployment
+1. Sheet → Extensions → Apps Script → replace `Code.gs` with this version → Save.
+2. Deploy → Manage deployments → Edit → Version: **New version** → Deploy (URL unchanged).
+3. Reload the page.
+
+---
+
+## v1.8 — 2026-09-02
+**Base:** v1.7. Not yet approved — test before adopting.
+
+### Added — device types
+- **شاشة قاعة** (HallScreen) — spec fields: حجم الشاشة، اسم/رقم القاعة.
+- **لواقط شبكة** (NetworkReceivers) — spec fields: عنوان IP، اسم الشبكة SSID.
+- **جدار حماية** (Firewall) — spec fields: عنوان IP، عدد المنافذ.
+- **شاشات كبرى** (LargeScreens) — spec fields: حجم الشاشة، الدقة.
+- Asset-tag prefixes added for all four: HS, AP, FW, LS.
+- `Code.gs`: the four new types added to `TYPES` so their sheet tabs are created automatically on first use.
+
+### Changed
+- **ملحقات (Accessories):** the extra field is now explicitly **"اسم الملحق"** — a free-text box that opens for this type to name the specific item.
+- **أخرى (Other):** the first extra field is now explicitly **"اسم النوع (أخرى)"** — a free-text box to name what the "other" type actually is; second field is a generic "مواصفة إضافية".
+
+---
+
 ## v1.7 — 2026-09-02
 **Base:** v1.6. Not yet approved — test before adopting.
 
