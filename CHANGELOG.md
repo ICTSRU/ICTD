@@ -5,6 +5,25 @@ All versions are listed newest first. Each release folder is named `vX.Y` and co
 
 ---
 
+## v2.1 — 2026-09-02
+**Base:** v1.9 (this branch does NOT include the v2.0 domain-restriction/access-control changes — that work remains separate and will be applied later, per your instruction). Not yet approved — test before adopting.
+
+### Added — device types
+- **Cisco Phone** (`CiscoPhone`) — spec fields: عنوان IP، رقم التحويلة. Prefix: `CP`.
+- **Wireless Cisco Phone** (`WirelessCiscoPhone`) — same spec fields. Prefix: `WCP`.
+
+### Changed — شاشة قاعة split into two brand-specific types
+- The single "شاشة قاعة" (HallScreen) type from v1.8 is replaced by two distinct types:
+  - **شاشة قاعه Huawei** (`HallScreenHuawei`) — prefix `HH`.
+  - **شاشة قاعة Benq** (`HallScreenBenq`) — prefix `HB`.
+  - Both keep the same spec fields: حجم الشاشة، اسم/رقم القاعة.
+- `Code.gs`: `TYPES` updated — `HallScreen` removed, the four new type keys added, so their sheet tabs are created automatically on first use.
+
+### ⚠️ Migration note
+If any devices were already saved under the old **HallScreen** sheet tab (from testing v1.8), they will no longer appear under either new type — the app has no way to know which brand each one was. Before deploying this `Code.gs`, manually move those rows into the `HallScreenHuawei` or `HallScreenBenq` tab (create the tab first by adding one device of that type from the page, or add the tab manually with the same header row) according to the actual screen brand.
+
+---
+
 ## v1.9 — 2026-09-02
 **Base:** v1.8. Not yet approved — test before adopting.
 

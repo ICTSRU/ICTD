@@ -369,12 +369,14 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const APP_VERSION = 'v1.9'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+const APP_VERSION = 'v2.1'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
 let TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
   Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية',
   MicrosoftService:'مايكروسوفت سيرفس',
-  HallScreen:'شاشة قاعة', NetworkReceivers:'لواقط شبكة', Firewall:'جدار حماية', LargeScreens:'شاشات كبرى',
+  NetworkReceivers:'لواقط شبكة', Firewall:'جدار حماية', LargeScreens:'شاشات كبرى',
+  HallScreenHuawei:'شاشة قاعه Huawei', HallScreenBenq:'شاشة قاعة Benq',
+  CiscoPhone:'Cisco Phone', WirelessCiscoPhone:'Wireless Cisco Phone',
   Other:'أخرى'
 };
 const STATUS_LABELS = {
@@ -395,7 +397,10 @@ let EXTRA_FIELDS = {
   Accessories: [['itemName','اسم الملحق'], ['','']],
   ScreenVertical: [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
   MicrosoftService: [['licenseType','نوع الترخيص'], ['expiryDate','تاريخ الانتهاء']],
-  HallScreen: [['size','حجم الشاشة (بوصة)'], ['hallName','اسم/رقم القاعة']],
+  HallScreenHuawei: [['size','حجم الشاشة (بوصة)'], ['hallName','اسم/رقم القاعة']],
+  HallScreenBenq: [['size','حجم الشاشة (بوصة)'], ['hallName','اسم/رقم القاعة']],
+  CiscoPhone: [['ip','عنوان IP'], ['extNumber','رقم التحويلة']],
+  WirelessCiscoPhone: [['ip','عنوان IP'], ['extNumber','رقم التحويلة']],
   NetworkReceivers: [['ip','عنوان IP'], ['ssid','اسم الشبكة SSID']],
   Firewall: [['ip','عنوان IP'], ['ports','عدد المنافذ']],
   LargeScreens: [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
@@ -412,7 +417,8 @@ const ADDED_BY_NAMES = [
 const TAG_PREFIXES = {
   PC:'PC', Laptop:'LT', Screen:'SR', Printer:'PR', Switch:'SW', UPS:'UPS',
   Scanner:'SC', Accessories:'AC', ScreenVertical:'SRV', MicrosoftService:'MS',
-  HallScreen:'HS', NetworkReceivers:'AP', Firewall:'FW', LargeScreens:'LS', Other:'OT'
+  NetworkReceivers:'AP', Firewall:'FW', LargeScreens:'LS',
+  HallScreenHuawei:'HH', HallScreenBenq:'HB', CiscoPhone:'CP', WirelessCiscoPhone:'WCP', Other:'OT'
 };
 // يولّد رقم الأصل التالي بناءً على أعلى رقم مستخدم فعليًا لنفس النوع في البيانات المحمّلة
 function nextTagFor(type){
