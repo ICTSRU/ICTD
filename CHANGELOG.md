@@ -5,7 +5,40 @@ All versions are listed newest first. Each release folder is named `vX.Y` and co
 
 ---
 
-## v1.4 — 2026-09-02
+## v1.7 — 2026-09-02
+**Base:** v1.6. Not yet approved — test before adopting.
+
+### Changed
+- Device-type label corrected to the exact requested text: **"مايكروسوفت سيرفس"** (was "خدمة مايكروسوفت").
+
+### Added — automatic asset tag
+- **رقم الأصل / الملصق is now generated automatically** the moment a device type is selected, and again whenever the type is changed. The field is read-only to prevent accidental manual edits; a **↻ توليد** button lets you force a fresh number if needed.
+- Generation logic: for the chosen type's prefix (PC, LT, SR, PR, SW, UPS, SC, AC, SRV, MS, OT), it scans the currently loaded devices of that type, finds the highest existing number, and returns `PREFIX-NEXT` — continuing the same numbering already in the sheet (e.g. existing `SR-20031` → next `SR-20032`) rather than restarting from 1.
+- A safety check still generates a tag on Save if the field is somehow empty (e.g. type chosen before the sheet finished loading).
+- Editing an existing device keeps its original tag unchanged — auto-generation only applies to new devices.
+
+### Unchanged
+- `Code.gs` — no backend change in this version.
+
+---
+
+## v1.6 — 2026-09-02
+**Base:** v1.4 (approved). Not yet approved — test before adopting.
+
+### Added
+- New device type **"خدمة مايكروسوفت" (MicrosoftService)** in the type filter and the add/edit form, with two dedicated spec fields: نوع الترخيص، تاريخ الانتهاء.
+- `Code.gs`: `MicrosoftService` added to the `TYPES` list so a matching sheet tab is created automatically on first use. Backend logic is otherwise unchanged from the version currently deployed (column-position based, matching v1.4's live backend) — this is NOT the header-name-based v1.5 backend.
+
+### Deployment
+1. Sheet → Extensions → Apps Script → replace `Code.gs` with this version → Save.
+2. Deploy → Manage deployments → Edit → Version: **New version** → Deploy (URL unchanged).
+3. Reload the page; "خدمة مايكروسوفت" appears in النوع dropdowns.
+
+---
+
+## v1.4 — 2026-09-02  ✅ APPROVED
+**⭐ الإصدار المعتمد حاليًا (Approved / Current Production Version).** لا تُستبدل هذه النسخة إلا بعد اختبار الإصدار التالي والتأكد من عمله على بيانات حقيقية.
+
 **Source:** v1.3
 
 ### Fixed
