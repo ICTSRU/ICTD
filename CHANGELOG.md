@@ -5,6 +5,25 @@ All versions are listed newest first. Each release folder is named `vX.Y` and co
 
 ---
 
+## v2.2 — 2026-09-02
+**Base:** v2.1. Not yet approved — test before adopting.
+
+### Added — device photo upload to Google Drive
+- New **"صورة الجهاز"** field in the add/edit form: choose an image file, it's resized client-side (max width 1280px, JPEG quality ~0.82) before upload to keep requests fast and small, with a live preview and an **"إزالة الصورة"** button.
+- On Save, the image is uploaded to a folder named **"SRU Infrastructure Inventory - Photos"** in the Google Drive of the account the Apps Script is deployed under (created automatically on first upload if it doesn't exist yet — this is "your own Drive" as requested, since deployments currently run as **Execute as: Me**).
+- The photo's shareable view link is stored as a new **PhotoUrl** column and shown as a small clickable thumbnail in the device table; also included as a link column in Excel exports.
+- Editing a device keeps its existing photo unless you choose a new file; "إزالة الصورة" clears the link on the device record (the file itself stays in Drive — it is not deleted).
+- If the Drive upload fails for any reason (e.g. Drive permission not yet authorized), the device still saves normally with its previous photo link untouched — a photo failure never blocks saving the record.
+
+### `Code.gs`
+- `HEADERS` gains `PhotoUrl` appended at the very end (after `AddedBy`) — position-safe, same pattern as `AddedBy` in v1.9, so existing sheets are never shifted; missing columns are auto-added on first use.
+- New `savePhotoIfProvided()` and `getOrCreatePhotosFolder()` functions handle the Drive upload and folder creation.
+
+### ⚠️ First-run authorization
+The first time a photo is saved after deploying this version, Google will prompt to authorize an additional Drive scope for the script (uploading files). Approve it once; it will not ask again.
+
+---
+
 ## v2.1 — 2026-09-02
 **Base:** v1.9 (this branch does NOT include the v2.0 domain-restriction/access-control changes — that work remains separate and will be applied later, per your instruction). Not yet approved — test before adopting.
 

@@ -290,6 +290,15 @@
         </select>
       </div>
       <div class="field wide">
+        <label>صورة الجهاز</label>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <input type="file" id="f_photo_file" accept="image/*">
+          <img id="photoPreview" src="" alt="معاينة" style="display:none;max-height:70px;border-radius:8px;border:1px solid var(--border);">
+          <button type="button" id="removePhotoBtn" class="btn btn-secondary" style="display:none;padding:6px 10px;">إزالة الصورة</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">تُحفظ الصورة تلقائيًا في مجلد Google Drive الخاص بك عند حفظ الجهاز.</div>
+      </div>
+      <div class="field wide">
         <label>ملاحظات</label>
         <textarea id="f_notes" rows="2" placeholder="أي تفاصيل إضافية..."></textarea>
       </div>
@@ -355,6 +364,7 @@
             <th>تاريخ الشراء</th>
             <th>الضمان</th>
             <th>تمت الإضافة بواسطة</th>
+            <th>الصورة</th>
             <th class="no-print">إجراءات</th>
           </tr>
         </thead>
@@ -369,7 +379,7 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const APP_VERSION = 'v2.1'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+const APP_VERSION = 'v2.2'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
 let TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
   Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية',
@@ -444,6 +454,48 @@ function populateAddedBySelect(){
   sel.innerHTML = '<option value="">اختر الاسم</option>' + ADDED_BY_NAMES.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
   sel.value = current;
 }
+
+// ---- device photo: client-side resize + upload-on-save to Google Drive ----
+let currentPhotoUrl = '';      // الصورة الحالية المحفوظة على درايف (عند التعديل)
+let pendingPhoto = null;       // {base64, mime, name} صورة جديدة اختارها المستخدم ولم تُرفع بعد
+
+function showPhotoPreview(src){
+  const img = document.getElementById('photoPreview');
+  const rm = document.getElementById('removePhotoBtn');
+  if(src){ img.src = src; img.style.display='inline-block'; rm.style.display='inline-block'; }
+  else { img.src=''; img.style.display='none'; rm.style.display='none'; }
+}
+
+document.getElementById('f_photo_file').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ alert('الرجاء اختيار ملف صورة.'); e.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const img = new Image();
+    img.onload = function(){
+      const maxW = 1280;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      pendingPhoto = { base64: dataUrl.split(',')[1], mime: 'image/jpeg', name: 'photo.jpg' };
+      showPhotoPreview(dataUrl);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('removePhotoBtn').addEventListener('click', function(){
+  currentPhotoUrl = '';
+  pendingPhoto = null;
+  document.getElementById('f_photo_file').value = '';
+  showPhotoPreview('');
+});
 
 let devices = [];
 let suppliers = [];
@@ -660,6 +712,10 @@ function clearForm(){
   renderExtraFields();
   editingId = null;
   autoFillTag();
+  currentPhotoUrl = '';
+  pendingPhoto = null;
+  document.getElementById('f_photo_file').value = '';
+  showPhotoPreview('');
   document.getElementById('saveBtn').textContent = 'حفظ الجهاز';
 }
 document.getElementById('clearBtn').addEventListener('click', clearForm);
@@ -697,8 +753,14 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     notes: document.getElementById('f_notes').value.trim(),
     warranty: document.getElementById('f_warranty').value,
     warrantyExpiry: document.getElementById('f_warranty_expiry').value,
-    addedBy: document.getElementById('f_added_by').value
+    addedBy: document.getElementById('f_added_by').value,
+    photoUrl: currentPhotoUrl
   };
+  if(pendingPhoto){
+    record.photoBase64 = pendingPhoto.base64;
+    record.photoMime = pendingPhoto.mime;
+    record.photoName = tag + '_' + Date.now() + '.jpg';
+  }
 
   const btn = document.getElementById('saveBtn');
   btn.disabled = true;
@@ -734,6 +796,10 @@ function editDevice(id){
   document.getElementById('f_date').value = d.date;
   document.getElementById('f_notes').value = d.notes;
   document.getElementById('f_added_by').value = d.addedBy || '';
+  currentPhotoUrl = d.photoUrl || '';
+  pendingPhoto = null;
+  document.getElementById('f_photo_file').value = '';
+  showPhotoPreview(currentPhotoUrl || '');
   document.getElementById('f_warranty').value = d.warranty || 'Covered';
   document.getElementById('f_warranty_expiry').value = d.warrantyExpiry || '';
   editingId = id;
@@ -819,6 +885,7 @@ function renderTable(){
         ${d.warrantyExpiry ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;"><span class="sru-en">${d.warrantyExpiry}</span></div>` : ''}
       </td>
       <td>${escapeHtml(d.addedBy)||'-'}</td>
+      <td>${d.photoUrl ? `<a href="${escapeHtml(d.photoUrl)}" target="_blank" rel="noopener" title="عرض الصورة"><img src="${escapeHtml(d.photoUrl)}" alt="صورة" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"></a>` : '-'}</td>
       <td class="no-print">
         <div class="row-actions">
           <button class="btn small secondary" onclick="editDevice('${d.id}')">تعديل</button>
@@ -861,7 +928,7 @@ function renderAll(){
 
 // ---- export ----
 function buildSheetData(list){
-  const header = ['نوع الجهاز','رقم الأصل','الشركة المصنعة','الموديل','الرقم التسلسلي','الشركة الموردة','اسم مسؤول التواصل','البريد الإلكتروني','رقم الهاتف','المواصفات','الموقع/القسم','المستخدم المسؤول','الحالة','تاريخ الشراء','حالة الضمان','تاريخ انتهاء الضمان','تمت الإضافة بواسطة','ملاحظات'];
+  const header = ['نوع الجهاز','رقم الأصل','الشركة المصنعة','الموديل','الرقم التسلسلي','الشركة الموردة','اسم مسؤول التواصل','البريد الإلكتروني','رقم الهاتف','المواصفات','الموقع/القسم','المستخدم المسؤول','الحالة','تاريخ الشراء','حالة الضمان','تاريخ انتهاء الضمان','تمت الإضافة بواسطة','رابط الصورة','ملاحظات'];
   const rows = list.map(d=>{
     const sup = findSupplier(d.supplier) || {};
     return [
@@ -869,7 +936,7 @@ function buildSheetData(list){
       d.supplier, sup.contactName, sup.email, sup.phone,
       specsToText(d), d.location, d.user,
       (STATUS_LABELS[d.status]||{ar:d.status}).ar, d.date,
-      (WARRANTY_LABELS[d.warranty]||{ar:d.warranty||'-'}).ar, d.warrantyExpiry, d.addedBy, d.notes
+      (WARRANTY_LABELS[d.warranty]||{ar:d.warranty||'-'}).ar, d.warrantyExpiry, d.addedBy, d.photoUrl||'', d.notes
     ];
   });
   return [header, ...rows];

@@ -9,7 +9,9 @@
  */
 
 const TYPES = ['PC','Laptop','Screen','Printer','Switch','UPS','Scanner','Accessories','ScreenVertical','MicrosoftService','HallScreenHuawei','HallScreenBenq','CiscoPhone','WirelessCiscoPhone','NetworkReceivers','Firewall','LargeScreens','Other'];
-const HEADERS = ['ID','Tag','Brand','Model','Serial','Supplier','Specs','Location','User','Status','Date','Notes','Warranty','WarrantyExpiry','UpdatedAt','AddedBy'];
+const HEADERS = ['ID','Tag','Brand','Model','Serial','Supplier','Specs','Location','User','Status','Date','Notes','Warranty','WarrantyExpiry','UpdatedAt','AddedBy','PhotoUrl'];
+// اسم مجلد Google Drive الذي تُحفظ فيه صور الأجهزة (يُنشأ تلقائيًا في Drive الخاص بحساب تشغيل السكربت إن لم يكن موجودًا)
+const PHOTOS_FOLDER_NAME = 'SRU Infrastructure Inventory - Photos';
 const SUPPLIER_HEADERS = ['SupplierName','ContactName','Email','Phone','UpdatedAt'];
 
 function doGet(e) {
@@ -36,16 +38,18 @@ function doPost(e) {
 
     if (action === 'add') {
       const r = payload.record;
-      sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy]);
+      r.photoUrl = savePhotoIfProvided(r);
+      sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy, r.photoUrl || '']);
       upsertSupplier(ss, r.supplier, r.supplierContactName, r.supplierEmail, r.supplierPhone);
 
     } else if (action === 'update') {
       const r = payload.record;
+      r.photoUrl = savePhotoIfProvided(r);
       const rowIndex = findRowById(sheet, r.id);
       if (rowIndex > -1) {
-        sheet.getRange(rowIndex, 1, 1, HEADERS.length).setValues([[r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy]]);
+        sheet.getRange(rowIndex, 1, 1, HEADERS.length).setValues([[r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy, r.photoUrl || '']]);
       } else {
-        sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy]);
+        sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy, r.photoUrl || '']);
       }
       upsertSupplier(ss, r.supplier, r.supplierContactName, r.supplierEmail, r.supplierPhone);
 
@@ -70,10 +74,10 @@ function getOrCreateSheet(ss, type) {
     sheet.appendRow(HEADERS);
     sheet.setFrozenRows(1);
   } else {
-    // إن كانت الورقة قديمة ولا تملك عمود AddedBy، نضيفه في آخر عمود فقط دون أي إزاحة للبيانات الحالية
+    // إن كانت الورقة قديمة وتنقصها أعمدة (AddedBy و/أو PhotoUrl)، نضيفها في نهاية الصف الأول فقط دون أي إزاحة للبيانات الحالية
     const lastCol = sheet.getLastColumn();
-    if (lastCol < HEADERS.length) {
-      sheet.getRange(1, HEADERS.length).setValue('AddedBy');
+    for (var i = lastCol; i < HEADERS.length; i++) {
+      sheet.getRange(1, i + 1).setValue(HEADERS[i]);
     }
   }
   return sheet;
@@ -93,7 +97,8 @@ function readSheet(sheet) {
         notes: r[11],
         warranty: r[12],
         warrantyExpiry: r[13] instanceof Date ? Utilities.formatDate(r[13], Session.getScriptTimeZone(), 'yyyy-MM-dd') : r[13],
-        addedBy: r[15]
+        addedBy: r[15],
+        photoUrl: r[16]
       };
     });
 }
@@ -142,6 +147,30 @@ function upsertSupplier(ss, name, contactName, email, phone) {
   } else {
     sheet.appendRow([name, contactName || '', email || '', phone || '', new Date().toISOString()]);
   }
+}
+
+// يرفع صورة الجهاز (إن أُرسلت كـ base64 من الصفحة) إلى مجلد Drive المخصص، ويعيد رابط العرض.
+// إن لم تُرسل صورة جديدة، يعيد الرابط الحالي كما هو (بلا تعديل) للحفاظ على الصورة السابقة عند التعديل.
+function savePhotoIfProvided(r) {
+  if (!r.photoBase64) return r.photoUrl || '';
+  try {
+    const folder = getOrCreatePhotosFolder();
+    const bytes = Utilities.base64Decode(r.photoBase64);
+    const blob = Utilities.newBlob(bytes, r.photoMime || 'image/jpeg', r.photoName || (r.tag + '.jpg'));
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    // رابط عرض مباشر يصلح للاستخدام داخل <img>
+    return 'https://drive.google.com/uc?export=view&id=' + file.getId();
+  } catch (err) {
+    // في حال فشل الرفع (صلاحيات Drive غير مُفعّلة مثلاً)، لا نوقف حفظ بيانات الجهاز
+    return r.photoUrl || '';
+  }
+}
+
+function getOrCreatePhotosFolder() {
+  const folders = DriveApp.getFoldersByName(PHOTOS_FOLDER_NAME);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(PHOTOS_FOLDER_NAME);
 }
 
 function findRowById(sheet, id) {
