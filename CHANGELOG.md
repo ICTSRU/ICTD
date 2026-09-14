@@ -5,6 +5,18 @@ All versions are listed newest first. Each release folder is named `vX.Y` and co
 
 ---
 
+## v2.3 — 2026-09-02
+**Base:** v2.2. Not yet approved — test before adopting.
+
+### Fixed — photo not visible when reopening/editing a device
+- The URL format saved in v2.2 (`drive.google.com/uc?export=view&id=...`) does not reliably render inside an `<img>` tag due to how Drive handles that link when hotlinked. Switched to Drive's thumbnail endpoint (`drive.google.com/thumbnail?id=...&sz=w1000`), which is the reliable format for inline image display.
+- ⚠️ This only fixes photos saved **from now on**. Any device saved under v2.2 has the old (broken-preview) link stored in its `PhotoUrl` cell — re-save that device (open it with تعديل, the image file input can be left empty, click حفظ) to refresh its link to the new working format, or edit the cell directly in the sheet by replacing `uc?export=view&id=` with `thumbnail?id=` and appending `&sz=w1000`.
+
+### Added — clearer photo preview when editing
+- The preview shown when clicking تعديل is larger (up to 160px tall) and includes a **"فتح الصورة بالحجم الكامل"** link to open the original photo in a new tab.
+
+---
+
 ## v2.2 — 2026-09-02
 **Base:** v2.1. Not yet approved — test before adopting.
 

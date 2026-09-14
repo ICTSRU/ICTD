@@ -159,8 +159,8 @@ function savePhotoIfProvided(r) {
     const blob = Utilities.newBlob(bytes, r.photoMime || 'image/jpeg', r.photoName || (r.tag + '.jpg'));
     const file = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    // رابط عرض مباشر يصلح للاستخدام داخل <img>
-    return 'https://drive.google.com/uc?export=view&id=' + file.getId();
+    // رابط thumbnail من Drive يعمل بشكل موثوق داخل <img> (بعكس رابط uc?export=view الذي قد لا يُعرض مباشرة)
+    return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1000';
   } catch (err) {
     // في حال فشل الرفع (صلاحيات Drive غير مُفعّلة مثلاً)، لا نوقف حفظ بيانات الجهاز
     return r.photoUrl || '';

@@ -293,7 +293,8 @@
         <label>صورة الجهاز</label>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <input type="file" id="f_photo_file" accept="image/*">
-          <img id="photoPreview" src="" alt="معاينة" style="display:none;max-height:70px;border-radius:8px;border:1px solid var(--border);">
+          <img id="photoPreview" src="" alt="معاينة" style="display:none;max-height:160px;max-width:220px;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:#fff;">
+          <a id="photoOpenLink" href="#" target="_blank" rel="noopener" style="display:none;font-size:12px;">فتح الصورة بالحجم الكامل</a>
           <button type="button" id="removePhotoBtn" class="btn btn-secondary" style="display:none;padding:6px 10px;">إزالة الصورة</button>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px;">تُحفظ الصورة تلقائيًا في مجلد Google Drive الخاص بك عند حفظ الجهاز.</div>
@@ -379,7 +380,7 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const APP_VERSION = 'v2.2'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+const APP_VERSION = 'v2.3'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
 let TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
   Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية',
@@ -462,8 +463,13 @@ let pendingPhoto = null;       // {base64, mime, name} صورة جديدة اخ�
 function showPhotoPreview(src){
   const img = document.getElementById('photoPreview');
   const rm = document.getElementById('removePhotoBtn');
-  if(src){ img.src = src; img.style.display='inline-block'; rm.style.display='inline-block'; }
-  else { img.src=''; img.style.display='none'; rm.style.display='none'; }
+  const link = document.getElementById('photoOpenLink');
+  if(src){
+    img.src = src; img.style.display='inline-block'; rm.style.display='inline-block';
+    link.href = src; link.style.display='inline-block';
+  } else {
+    img.src=''; img.style.display='none'; rm.style.display='none'; link.style.display='none';
+  }
 }
 
 document.getElementById('f_photo_file').addEventListener('change', function(e){
