@@ -208,7 +208,10 @@
       </div>
       <div class="field">
         <label>رقم الأصل / الملصق <span class="req">*</span></label>
-        <input id="f_tag" placeholder="مثال: SRU-PC-0231">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input id="f_tag" placeholder="يُنشأ تلقائيًا" readonly style="background:#f3f0f9;cursor:not-allowed;">
+          <button type="button" id="regenTagBtn" class="btn btn-secondary" style="white-space:nowrap;padding:8px 10px;">↻ توليد</button>
+        </div>
       </div>
       <div class="field">
         <label>الشركة المصنعة</label>
@@ -359,10 +362,11 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const APP_VERSION = 'v1.4'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+const APP_VERSION = 'v1.7'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
 let TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
-  Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية', Other:'أخرى'
+  Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية',
+  MicrosoftService:'مايكروسوفت سيرفس', Other:'أخرى'
 };
 const STATUS_LABELS = {
   Active:{ar:'نشط', cls:'active'}, Storage:{ar:'في المخزن', cls:'storage'},
@@ -381,8 +385,33 @@ let EXTRA_FIELDS = {
   Scanner: [['conn','نوع الاتصال'], ['','']],
   Accessories: [['itemType','نوع الملحق'], ['','']],
   ScreenVertical: [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
+  MicrosoftService: [['licenseType','نوع الترخيص'], ['expiryDate','تاريخ الانتهاء']],
   Other:   [['spec1','مواصفة 1'], ['spec2','مواصفة 2']]
 };
+
+// بادئة رقم الأصل لكل نوع جهاز — تُستخدم لتوليد الرقم تلقائيًا
+const TAG_PREFIXES = {
+  PC:'PC', Laptop:'LT', Screen:'SR', Printer:'PR', Switch:'SW', UPS:'UPS',
+  Scanner:'SC', Accessories:'AC', ScreenVertical:'SRV', MicrosoftService:'MS', Other:'OT'
+};
+// يولّد رقم الأصل التالي بناءً على أعلى رقم مستخدم فعليًا لنفس النوع في البيانات المحمّلة
+function nextTagFor(type){
+  const prefix = TAG_PREFIXES[type] || (type||'DEV').slice(0,3).toUpperCase();
+  const re = new RegExp('^' + prefix + '-(\\d+)$', 'i');
+  let max = 0, width = 3;
+  devices.filter(d=>d.type===type).forEach(d=>{
+    const m = String(d.tag||'').match(re);
+    if(m){ const n = parseInt(m[1],10); if(n>max){ max = n; width = m[1].length; } }
+  });
+  const next = max + 1;
+  return prefix + '-' + String(next).padStart(width, '0');
+}
+function autoFillTag(){
+  if(editingId) return; // لا نُعيد توليد الرقم عند تعديل جهاز موجود
+  const type = document.getElementById('f_type').value;
+  document.getElementById('f_tag').value = type ? nextTagFor(type) : '';
+}
+document.getElementById('regenTagBtn').addEventListener('click', autoFillTag);
 
 let devices = [];
 let suppliers = [];
@@ -482,6 +511,7 @@ async function apiList(){
     });
     populateFormTypeSelect();
     renderExtraFields();
+    autoFillTag();
     buildExportDropdown();
     populateSupplierDatalist();
     const fixed = devices.filter(d=>d._realigned).length;
@@ -569,7 +599,7 @@ document.getElementById('refreshBtn').addEventListener('click', apiList);
 
 // ---- form extra fields ----
 const typeSelect = document.getElementById('f_type');
-typeSelect.addEventListener('change', renderExtraFields);
+typeSelect.addEventListener('change', ()=>{ renderExtraFields(); autoFillTag(); });
 function renderExtraFields(){
   const t = typeSelect.value;
   const conf = EXTRA_FIELDS[t] || [];
@@ -597,12 +627,14 @@ function clearForm(){
   document.getElementById('f_warranty').value='Covered';
   renderExtraFields();
   editingId = null;
+  autoFillTag();
   document.getElementById('saveBtn').textContent = 'حفظ الجهاز';
 }
 document.getElementById('clearBtn').addEventListener('click', clearForm);
 
 document.getElementById('saveBtn').addEventListener('click', async ()=>{
   const type = document.getElementById('f_type').value;
+  if(type && !document.getElementById('f_tag').value.trim()) autoFillTag();
   const tag = document.getElementById('f_tag').value.trim();
   const location = document.getElementById('f_location').value.trim();
   if(!type || !tag || !location){
