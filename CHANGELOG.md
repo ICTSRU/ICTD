@@ -5,6 +5,36 @@ All versions are listed newest first. Each release folder is named `vX.Y` and co
 
 ---
 
+## v2.9 — 2026-09-02
+**Base:** v2.8. Not yet approved — test before adopting.
+
+### Changed — status and warranty as clickable donut charts
+- The flat status cards (نشط، في المخزن، تحت الصيانة، خارج الخدمة) are replaced by a **donut chart** showing each status's share of the total, with a legend (color, label, count, percentage) next to it.
+- The warranty cards (ضمان ساري، ضمان منتهي) are replaced the same way with a second donut chart.
+- **إجمالي الأجهزة** stays as its own bold card to the right of both charts, unchanged in emphasis from v2.6–v2.8.
+- Every donut slice and every legend row is clickable — clicking filters the device table to that status/warranty and scrolls down to it, exactly like the v2.8 cards did. Hovering a slice shows an exact tooltip (label, count, percentage).
+- Device-type cards below the divider are unchanged from v2.8 (grid of cards, click-to-filter, zero-filled).
+- With zero devices, both donuts render as an empty gray ring instead of breaking on a division by zero.
+
+No `Code.gs` change in this version.
+
+---
+
+## v2.8 — 2026-09-02
+**Base:** v2.7. Not yet approved — test before adopting.
+
+### Added — dashboard cards are now clickable filters
+- Clicking **إجمالي الأجهزة** clears all filters and shows every device in the table below.
+- Clicking a **status card** (نشط، في المخزن، تحت الصيانة، خارج الخدمة) filters the table to that status.
+- Clicking a **warranty card** (ضمان ساري، ضمان منتهي) filters the table to that warranty state.
+- Clicking a **device-type card** filters the table to that type.
+- Any click also clears the search box and scrolls the page down to the device table, so the filtered result is immediately visible.
+- Cards now show a hover effect (slight lift + shadow) to signal they're clickable.
+
+No `Code.gs` change in this version.
+
+---
+
 ## v2.7 — 2026-09-02
 **Base:** v2.6. `Code.gs` base updated to the v2.2 backend (latest with AddedBy + PhotoUrl) since this version needed a `TYPES` change. Not yet approved — test before adopting.
 

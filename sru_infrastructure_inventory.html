@@ -82,6 +82,20 @@
   .stat .num{font-size:26px;font-weight:800;color:var(--purple-dark);}
   .stat.total .num{font-size:34px;font-weight:900;color:var(--purple);}
   .dash-divider{border:none;border-top:2px solid var(--border);margin:4px 0 20px;}
+  .donut-row{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;}
+  .donut-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;flex:1;min-width:260px;display:flex;align-items:center;gap:18px;}
+  .donut-card.total-card{flex:0 0 170px;flex-direction:column;justify-content:center;align-items:center;text-align:center;cursor:pointer;}
+  .donut-card.total-card .num{font-size:34px;font-weight:900;color:var(--purple);}
+  .donut-card.total-card .lbl{font-size:12.5px;color:var(--muted);font-weight:700;margin-top:4px;}
+  .donut-svg circle{cursor:pointer;transition:opacity .15s;}
+  .donut-svg circle:hover{opacity:.75;}
+  .donut-center-num{font-size:20px;font-weight:900;fill:var(--purple-dark);}
+  .donut-center-lbl{font-size:9px;font-weight:700;fill:var(--muted);}
+  .donut-legend{flex:1;display:flex;flex-direction:column;gap:6px;min-width:150px;}
+  .donut-legend-item{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--ink);cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .15s;}
+  .donut-legend-item:hover{background:var(--purple-light);}
+  .donut-swatch{width:11px;height:11px;border-radius:3px;flex:none;}
+  .donut-legend-count{margin-inline-start:auto;color:var(--muted);font-weight:800;}
   .stat .lbl{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:2px;}
 
   .panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
@@ -187,7 +201,20 @@
     <button class="btn small" id="saveUrlBtn">حفظ الرابط</button>
   </div>
 
-  <div class="dash" id="dashStatusStats"></div>
+  <div class="donut-row">
+    <div class="donut-card total-card" id="totalCard">
+      <div class="num" id="totalNum">0</div>
+      <div class="lbl">إجمالي الأجهزة</div>
+    </div>
+    <div class="donut-card">
+      <svg class="donut-svg" viewBox="0 0 120 120" width="120" height="120" id="statusDonut"></svg>
+      <div class="donut-legend" id="statusLegend"></div>
+    </div>
+    <div class="donut-card">
+      <svg class="donut-svg" viewBox="0 0 120 120" width="120" height="120" id="warrantyDonut"></svg>
+      <div class="donut-legend" id="warrantyLegend"></div>
+    </div>
+  </div>
   <div class="dash-divider"></div>
   <div class="dash" id="dashTypeStats"></div>
   <div class="dash-divider"></div>
@@ -386,7 +413,7 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const APP_VERSION = 'v2.8'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+const APP_VERSION = 'v2.9'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
 let TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة مركزية', DesktopPrinter:'طابعة مكتبية',
   PolycomVC:'Polycom VC', SmartProjector:'Smart Projector', Projector:'Projector',
@@ -928,26 +955,67 @@ function applyDashFilter(type, status, warranty){
   document.getElementById('tbody').closest('table').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
+// يرسم مخطط دائري (Donut) بعدة شرائح قابلة للنقر داخل عنصر <svg> فارغ، مع رقم مركزي ووسيلة إيضاح
+// segments: [{label, value, color, onClick}]  centerLabel: نص صغير أسفل الرقم المركزي
+function renderDonut(svgId, legendId, segments, centerLabel){
+  const svg = document.getElementById(svgId);
+  const legendEl = document.getElementById(legendId);
+  const total = segments.reduce((sum,s)=>sum+s.value, 0);
+  const r = 48, cx = 60, cy = 60, circumference = 2 * Math.PI * r;
+
+  if(total === 0){
+    svg.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="16"></circle>
+      <text x="${cx}" y="${cy-2}" text-anchor="middle" class="donut-center-num">0</text>
+      <text x="${cx}" y="${cy+12}" text-anchor="middle" class="donut-center-lbl">${escapeHtml(centerLabel)}</text>`;
+    legendEl.innerHTML = segments.map(s=>
+      `<div class="donut-legend-item" onclick="${s.onClick}"><span class="donut-swatch" style="background:${s.color}"></span>${escapeHtml(s.label)}<span class="donut-legend-count">0</span></div>`
+    ).join('');
+    return;
+  }
+
+  let offsetAccum = 0;
+  let circlesHtml = '';
+  segments.forEach(s=>{
+    const frac = s.value / total;
+    const dash = frac * circumference;
+    circlesHtml += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="16"
+      stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offsetAccum}"
+      transform="rotate(-90 ${cx} ${cy})" onclick="${s.onClick}"><title>${escapeHtml(s.label)}: ${s.value} (${Math.round(frac*100)}%)</title></circle>`;
+    offsetAccum += dash;
+  });
+  svg.innerHTML = circlesHtml +
+    `<text x="${cx}" y="${cy-2}" text-anchor="middle" class="donut-center-num">${total}</text>
+     <text x="${cx}" y="${cy+12}" text-anchor="middle" class="donut-center-lbl">${escapeHtml(centerLabel)}</text>`;
+
+  legendEl.innerHTML = segments.map(s=>{
+    const pct = Math.round((s.value/total)*100);
+    return `<div class="donut-legend-item" onclick="${s.onClick}"><span class="donut-swatch" style="background:${s.color}"></span>${escapeHtml(s.label)}<span class="donut-legend-count">${s.value} (${pct}%)</span></div>`;
+  }).join('');
+}
+
 function renderDash(){
   const total = devices.length;
   const byType = {};
   devices.forEach(d=>{ byType[d.type]=(byType[d.type]||0)+1; });
 
-  // الصفان الأول والثاني: إجمالي الأجهزة (بخط أعرض وأكبر)، ثم توزيع الحالة، ثم توزيع الضمان
+  document.getElementById('totalNum').textContent = total;
+  document.getElementById('totalCard').onclick = function(){ applyDashFilter('','',''); };
+
   const byStatus = {};
   devices.forEach(d=>{ byStatus[d.status]=(byStatus[d.status]||0)+1; });
-  let statusHtml = `<div class="stat total" onclick="applyDashFilter('','','')"><div class="num">${total}</div><div class="lbl">إجمالي الأجهزة</div></div>`;
-  ['Active','Storage','Repair','Retired'].forEach(st=>{
-    const c = byStatus[st] || 0;
-    const lbl = (STATUS_LABELS[st]||{ar:st}).ar;
-    statusHtml += `<div class="stat" onclick="applyDashFilter('','${st}','')"><div class="num">${c}</div><div class="lbl">${lbl}</div></div>`;
-  });
-  ['Covered','Expired'].forEach(w=>{
-    const c = devices.filter(d=>d.warranty===w).length;
-    const lbl = 'ضمان ' + (WARRANTY_LABELS[w]||{ar:w}).ar;
-    statusHtml += `<div class="stat" onclick="applyDashFilter('','','${w}')"><div class="num">${c}</div><div class="lbl">${lbl}</div></div>`;
-  });
-  document.getElementById('dashStatusStats').innerHTML = statusHtml;
+  renderDonut('statusDonut', 'statusLegend', [
+    { label: 'نشط', value: byStatus.Active||0, color: 'var(--green)', onClick: "applyDashFilter('','Active','')" },
+    { label: 'في المخزن', value: byStatus.Storage||0, color: 'var(--purple)', onClick: "applyDashFilter('','Storage','')" },
+    { label: 'تحت الصيانة', value: byStatus.Repair||0, color: 'var(--amber)', onClick: "applyDashFilter('','Repair','')" },
+    { label: 'خارج الخدمة', value: byStatus.Retired||0, color: 'var(--red)', onClick: "applyDashFilter('','Retired','')" }
+  ], 'إجمالي');
+
+  const covered = devices.filter(d=>d.warranty==='Covered').length;
+  const expired = devices.filter(d=>d.warranty==='Expired').length;
+  renderDonut('warrantyDonut', 'warrantyLegend', [
+    { label: 'ضمان ساري', value: covered, color: 'var(--green)', onClick: "applyDashFilter('','','Covered')" },
+    { label: 'ضمان منتهي', value: expired, color: 'var(--red)', onClick: "applyDashFilter('','','Expired')" }
+  ], 'إجمالي');
 
   // بعد الخط الفاصل: اسم كل نوع جهاز والعدد — تشمل الأنواع التي لا تحوي أي جهاز بعد (تظهر بصفر)،
   // إضافةً لأي نوع موجود في البيانات الفعلية ولم يعد معرّفًا في TYPE_LABELS (احتياطًا).
