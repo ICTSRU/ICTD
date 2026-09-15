@@ -79,6 +79,8 @@
   .stat::before{content:'';position:absolute;right:0;top:0;bottom:0;width:4px;background:var(--blue);}
   .stat.total::before{background:var(--purple);}
   .stat .num{font-size:26px;font-weight:800;color:var(--purple-dark);}
+  .stat.total .num{font-size:34px;font-weight:900;color:var(--purple);}
+  .dash-divider{border:none;border-top:2px solid var(--border);margin:4px 0 20px;}
   .stat .lbl{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:2px;}
 
   .panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
@@ -184,7 +186,10 @@
     <button class="btn small" id="saveUrlBtn">حفظ الرابط</button>
   </div>
 
-  <div class="dash" id="dashStats"></div>
+  <div class="dash" id="dashStatusStats"></div>
+  <div class="dash-divider"></div>
+  <div class="dash" id="dashTypeStats"></div>
+  <div class="dash-divider"></div>
 
   <!-- FORM PANEL -->
   <div class="panel no-print">
@@ -380,9 +385,10 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const APP_VERSION = 'v2.3'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+const APP_VERSION = 'v2.7'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
 let TYPE_LABELS = {
-  PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة',
+  PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة مركزية', DesktopPrinter:'طابعة مكتبية',
+  PolycomVC:'Polycom VC', SmartProjector:'Smart Projector', Projector:'Projector',
   Switch:'سويتش شبكة', UPS:'UPS', Scanner:'ماسح ضوئي', Accessories:'ملحقات', ScreenVertical:'شاشة طولية',
   MicrosoftService:'مايكروسوفت سيرفس',
   NetworkReceivers:'لواقط شبكة', Firewall:'جدار حماية', LargeScreens:'شاشات كبرى',
@@ -402,6 +408,10 @@ let EXTRA_FIELDS = {
   Laptop:  [['ip','عنوان IP'], ['ram','الذاكرة RAM']],
   Screen:  [['size','حجم الشاشة (بوصة)'], ['res','الدقة']],
   Printer: [['ip','عنوان IP'], ['toner','موديل الحبر/التونر']],
+  DesktopPrinter: [['toner','موديل الحبر/التونر'], ['','']],
+  PolycomVC: [['ip','عنوان IP'], ['roomName','اسم/رقم القاعة']],
+  SmartProjector: [['ip','عنوان IP'], ['hallName','اسم/رقم القاعة']],
+  Projector: [['hallName','اسم/رقم القاعة'], ['','']],
   Switch:  [['ip','عنوان IP'], ['ports','عدد المنافذ']],
   UPS:     [['capacity','السعة (VA)'], ['battery','حالة البطارية']],
   Scanner: [['conn','نوع الاتصال'], ['','']],
@@ -426,7 +436,7 @@ const ADDED_BY_NAMES = [
   'Shath Albusyli','Inshrah Almutairi','عاطف النادي','سراج'
 ];
 const TAG_PREFIXES = {
-  PC:'PC', Laptop:'LT', Screen:'SR', Printer:'PR', Switch:'SW', UPS:'UPS',
+  PC:'PC', Laptop:'LT', Screen:'SR', Printer:'PR', DesktopPrinter:'DP', PolycomVC:'PVC', SmartProjector:'SPJ', Projector:'PJ', Switch:'SW', UPS:'UPS',
   Scanner:'SC', Accessories:'AC', ScreenVertical:'SRV', MicrosoftService:'MS',
   NetworkReceivers:'AP', Firewall:'FW', LargeScreens:'LS',
   HallScreenHuawei:'HH', HallScreenBenq:'HB', CiscoPhone:'CP', WirelessCiscoPhone:'WCP', Other:'OT'
@@ -911,19 +921,32 @@ function renderDash(){
   const total = devices.length;
   const byType = {};
   devices.forEach(d=>{ byType[d.type]=(byType[d.type]||0)+1; });
-  const activeCount = devices.filter(d=>d.status==='Active').length;
-  const repairCount = devices.filter(d=>d.status==='Repair').length;
-  const expiredWarranty = devices.filter(d=>d.warranty==='Expired').length;
 
-  let html = `<div class="stat total"><div class="num">${total}</div><div class="lbl">إجمالي الأجهزة</div></div>`;
-  html += `<div class="stat"><div class="num">${activeCount}</div><div class="lbl">أجهزة نشطة</div></div>`;
-  html += `<div class="stat"><div class="num">${repairCount}</div><div class="lbl">تحت الصيانة</div></div>`;
-  html += `<div class="stat"><div class="num">${expiredWarranty}</div><div class="lbl">ضمان منتهي</div></div>`;
-  const topTypes = Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,3);
-  topTypes.forEach(([t,c])=>{
-    html += `<div class="stat"><div class="num">${c}</div><div class="lbl">${TYPE_LABELS[t]||t}</div></div>`;
+  // الصفان الأول والثاني: إجمالي الأجهزة (بخط أعرض وأكبر)، ثم توزيع الحالة، ثم توزيع الضمان
+  const byStatus = {};
+  devices.forEach(d=>{ byStatus[d.status]=(byStatus[d.status]||0)+1; });
+  let statusHtml = `<div class="stat total"><div class="num">${total}</div><div class="lbl">إجمالي الأجهزة</div></div>`;
+  ['Active','Storage','Repair','Retired'].forEach(st=>{
+    const c = byStatus[st] || 0;
+    const lbl = (STATUS_LABELS[st]||{ar:st}).ar;
+    statusHtml += `<div class="stat"><div class="num">${c}</div><div class="lbl">${lbl}</div></div>`;
   });
-  document.getElementById('dashStats').innerHTML = html;
+  ['Covered','Expired'].forEach(w=>{
+    const c = devices.filter(d=>d.warranty===w).length;
+    const lbl = 'ضمان ' + (WARRANTY_LABELS[w]||{ar:w}).ar;
+    statusHtml += `<div class="stat"><div class="num">${c}</div><div class="lbl">${lbl}</div></div>`;
+  });
+  document.getElementById('dashStatusStats').innerHTML = statusHtml;
+
+  // بعد الخط الفاصل: اسم كل نوع جهاز والعدد — تشمل الأنواع التي لا تحوي أي جهاز بعد (تظهر بصفر)،
+  // إضافةً لأي نوع موجود في البيانات الفعلية ولم يعد معرّفًا في TYPE_LABELS (احتياطًا).
+  const allTypeKeys = Array.from(new Set([...Object.keys(TYPE_LABELS), ...Object.keys(byType)]));
+  let typeHtml = '';
+  allTypeKeys.forEach(t=>{
+    const c = byType[t] || 0;
+    typeHtml += `<div class="stat"><div class="num">${c}</div><div class="lbl">${TYPE_LABELS[t]||t}</div></div>`;
+  });
+  document.getElementById('dashTypeStats').innerHTML = typeHtml;
 }
 
 function renderAll(){

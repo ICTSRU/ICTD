@@ -5,6 +5,47 @@ All versions are listed newest first. Each release folder is named `vX.Y` and co
 
 ---
 
+## v2.7 — 2026-09-02
+**Base:** v2.6. `Code.gs` base updated to the v2.2 backend (latest with AddedBy + PhotoUrl) since this version needed a `TYPES` change. Not yet approved — test before adopting.
+
+### Changed
+- Device type label **"طابعة"** renamed to **"طابعة مركزية"** (same underlying type key `Printer`, so any existing printer devices keep their data — this is a label-only change).
+
+### Added — device types
+| النوع | الحقول | البادئة |
+|---|---|---|
+| طابعة مكتبية (DesktopPrinter) | موديل الحبر/التونر | DP |
+| Polycom VC | عنوان IP، اسم/رقم القاعة | PVC |
+| Smart Projector | عنوان IP، اسم/رقم القاعة | SPJ |
+| Projector | اسم/رقم القاعة | PJ |
+
+`Code.gs`: the four new type keys added to `TYPES` so their sheet tabs are created automatically on first use.
+
+### ⚠️ Deployment note
+Since this `Code.gs` is based on the v2.2 backend (photo upload + AddedBy), deploying it also brings in those features if you had stayed on an earlier backend. If you are not yet ready for the photo-upload feature, tell me and I will prepare this same type change against your currently-deployed `Code.gs` version instead.
+
+---
+
+## v2.6 — 2026-09-02
+**Base:** v2.4 (v2.5 disregarded per instruction — this version replaces it with the exact requested layout). Not yet approved — test before adopting.
+
+### Changed — dashboard layout, per exact specification
+- **Rows 1–2:** إجمالي الأجهزة (in visibly bolder/larger text than the other numbers — 34px/weight 900 vs 26px/weight 800), then أجهزة نشطة، في المخزن، تحت الصيانة، خارج الخدمة، then ضمان ساري، ضمان منتهي.
+- **Divider line.**
+- **Type section:** every device type's name and count (zero-filled for types with no devices).
+- **Divider line** after the type section, before the data-entry form.
+
+---
+
+## v2.4 — 2026-09-02
+**Base:** v2.3. Not yet approved — test before adopting.
+
+### Fixed — dashboard only showed 3 device types
+- The top dashboard cards previously showed only the **3 highest-count** device types, so a newly added type with few devices (e.g. "شاشة قاعه Huawei" with 1 device) could be pushed out and appear missing even though the device was saved correctly.
+- The dashboard now shows a card for **every device type defined in the system**, in a fixed order — including types with **zero** devices, which display "0" instead of being omitted — so the full picture is always visible at a glance.
+
+---
+
 ## v2.3 — 2026-09-02
 **Base:** v2.2. Not yet approved — test before adopting.
 

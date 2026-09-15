@@ -8,7 +8,7 @@
  *    The Web app URL does not change.
  */
 
-const TYPES = ['PC','Laptop','Screen','Printer','Switch','UPS','Scanner','Accessories','ScreenVertical','MicrosoftService','HallScreenHuawei','HallScreenBenq','CiscoPhone','WirelessCiscoPhone','NetworkReceivers','Firewall','LargeScreens','Other'];
+const TYPES = ['PC','Laptop','Screen','Printer','DesktopPrinter','PolycomVC','SmartProjector','Projector','Switch','UPS','Scanner','Accessories','ScreenVertical','MicrosoftService','HallScreenHuawei','HallScreenBenq','CiscoPhone','WirelessCiscoPhone','NetworkReceivers','Firewall','LargeScreens','Other'];
 const HEADERS = ['ID','Tag','Brand','Model','Serial','Supplier','Specs','Location','User','Status','Date','Notes','Warranty','WarrantyExpiry','UpdatedAt','AddedBy','PhotoUrl'];
 // اسم مجلد Google Drive الذي تُحفظ فيه صور الأجهزة (يُنشأ تلقائيًا في Drive الخاص بحساب تشغيل السكربت إن لم يكن موجودًا)
 const PHOTOS_FOLDER_NAME = 'SRU Infrastructure Inventory - Photos';
@@ -159,8 +159,8 @@ function savePhotoIfProvided(r) {
     const blob = Utilities.newBlob(bytes, r.photoMime || 'image/jpeg', r.photoName || (r.tag + '.jpg'));
     const file = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    // رابط thumbnail من Drive يعمل بشكل موثوق داخل <img> (بعكس رابط uc?export=view الذي قد لا يُعرض مباشرة)
-    return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1000';
+    // رابط عرض مباشر يصلح للاستخدام داخل <img>
+    return 'https://drive.google.com/uc?export=view&id=' + file.getId();
   } catch (err) {
     // في حال فشل الرفع (صلاحيات Drive غير مُفعّلة مثلاً)، لا نوقف حفظ بيانات الجهاز
     return r.photoUrl || '';
