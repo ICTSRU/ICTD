@@ -75,7 +75,8 @@
 
   .wrap{max-width:1200px;margin:0 auto;padding:24px 20px 60px;}
   .dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px;}
-  .stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden;}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .15s;}
+  .stat:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);transform:translateY(-1px);}
   .stat::before{content:'';position:absolute;right:0;top:0;bottom:0;width:4px;background:var(--blue);}
   .stat.total::before{background:var(--purple);}
   .stat .num{font-size:26px;font-weight:800;color:var(--purple-dark);}
@@ -385,7 +386,7 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const APP_VERSION = 'v2.7'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+const APP_VERSION = 'v2.8'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
 let TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة مركزية', DesktopPrinter:'طابعة مكتبية',
   PolycomVC:'Polycom VC', SmartProjector:'Smart Projector', Projector:'Projector',
@@ -917,6 +918,16 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// يطبّق فلاتر الجدول من بطاقات لوحة المؤشرات وينقل العرض إلى سجل الأجهزة
+function applyDashFilter(type, status, warranty){
+  document.getElementById('searchBox').value = '';
+  document.getElementById('filterType').value = type || '';
+  document.getElementById('filterStatus').value = status || '';
+  document.getElementById('filterWarranty').value = warranty || '';
+  renderTable();
+  document.getElementById('tbody').closest('table').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
 function renderDash(){
   const total = devices.length;
   const byType = {};
@@ -925,16 +936,16 @@ function renderDash(){
   // الصفان الأول والثاني: إجمالي الأجهزة (بخط أعرض وأكبر)، ثم توزيع الحالة، ثم توزيع الضمان
   const byStatus = {};
   devices.forEach(d=>{ byStatus[d.status]=(byStatus[d.status]||0)+1; });
-  let statusHtml = `<div class="stat total"><div class="num">${total}</div><div class="lbl">إجمالي الأجهزة</div></div>`;
+  let statusHtml = `<div class="stat total" onclick="applyDashFilter('','','')"><div class="num">${total}</div><div class="lbl">إجمالي الأجهزة</div></div>`;
   ['Active','Storage','Repair','Retired'].forEach(st=>{
     const c = byStatus[st] || 0;
     const lbl = (STATUS_LABELS[st]||{ar:st}).ar;
-    statusHtml += `<div class="stat"><div class="num">${c}</div><div class="lbl">${lbl}</div></div>`;
+    statusHtml += `<div class="stat" onclick="applyDashFilter('','${st}','')"><div class="num">${c}</div><div class="lbl">${lbl}</div></div>`;
   });
   ['Covered','Expired'].forEach(w=>{
     const c = devices.filter(d=>d.warranty===w).length;
     const lbl = 'ضمان ' + (WARRANTY_LABELS[w]||{ar:w}).ar;
-    statusHtml += `<div class="stat"><div class="num">${c}</div><div class="lbl">${lbl}</div></div>`;
+    statusHtml += `<div class="stat" onclick="applyDashFilter('','','${w}')"><div class="num">${c}</div><div class="lbl">${lbl}</div></div>`;
   });
   document.getElementById('dashStatusStats').innerHTML = statusHtml;
 
@@ -944,7 +955,7 @@ function renderDash(){
   let typeHtml = '';
   allTypeKeys.forEach(t=>{
     const c = byType[t] || 0;
-    typeHtml += `<div class="stat"><div class="num">${c}</div><div class="lbl">${TYPE_LABELS[t]||t}</div></div>`;
+    typeHtml += `<div class="stat" onclick="applyDashFilter('${t}','','')"><div class="num">${c}</div><div class="lbl">${TYPE_LABELS[t]||t}</div></div>`;
   });
   document.getElementById('dashTypeStats').innerHTML = typeHtml;
 }
