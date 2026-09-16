@@ -8,7 +8,7 @@
  *    The Web app URL does not change.
  */
 
-const TYPES = ['PC','Laptop','Screen','Printer','DesktopPrinter','PolycomVC','SmartProjector','Projector','Switch','UPS','Scanner','Accessories','ScreenVertical','MicrosoftService','HallScreenHuawei','HallScreenBenq','CiscoPhone','WirelessCiscoPhone','NetworkReceivers','Firewall','LargeScreens','Other'];
+const TYPES = ['PC','Laptop','Screen','Printer','DesktopPrinter','PolycomVC','SmartProjector','Projector','LHD','MRS','CoreSwitch','DistributionSwitch','Routers','LoadBalancers','Switch','UPS','Scanner','Accessories','ScreenVertical','MicrosoftService','HallScreenHuawei','HallScreenBenq','CiscoPhone','WirelessCiscoPhone','NetworkReceivers','Firewall','LargeScreens','Other'];
 const HEADERS = ['ID','Tag','Brand','Model','Serial','Supplier','Specs','Location','User','Status','Date','Notes','Warranty','WarrantyExpiry','UpdatedAt','AddedBy','PhotoUrl'];
 // اسم مجلد Google Drive الذي تُحفظ فيه صور الأجهزة (يُنشأ تلقائيًا في Drive الخاص بحساب تشغيل السكربت إن لم يكن موجودًا)
 const PHOTOS_FOLDER_NAME = 'SRU Infrastructure Inventory - Photos';

@@ -5,6 +5,29 @@ All versions are listed newest first. Each release folder is named `vX.Y` and co
 
 ---
 
+## v3.0 — 2026-09-02
+**Base:** v2.9. `Code.gs` base is v2.7 (same photo/AddedBy backend lineage). Not yet approved — test before adopting.
+
+### Why v3.0 and not v2.10
+Per the versioning rule, after v2.9 the next version is v3.0.
+
+### Added — device types
+| النوع | الحقول | البادئة |
+|---|---|---|
+| Lecture Hall Display (LHD) | عنوان IP، اسم/رقم القاعة | LHD |
+| Meeting Room's Schedulers (MRS) | عنوان IP، اسم/رقم القاعة | MRS |
+| Core Switch | عنوان IP، عدد المنافذ | CSW |
+| Distribution Switch | عنوان IP، عدد المنافذ | DSW |
+| Routers | عنوان IP، إصدار البرنامج الثابت | RTR |
+| Load Balancers | عنوان IP، عدد الـ VIPs | LB |
+
+`Code.gs`: the six new type keys added to `TYPES` so their sheet tabs are created automatically on first use.
+
+### Note
+The last item was requested as "Load Balnacers" — spelled here as **"Load Balancers"** (corrected spelling). Tell me if you intended the literal spelling instead.
+
+---
+
 ## v2.9 — 2026-09-02
 **Base:** v2.8. Not yet approved — test before adopting.
 
