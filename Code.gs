@@ -1,27 +1,61 @@
 /**
- * SRU Infrastructure Inventory - Google Sheets backend
- * Version: v1.6 — added 'MicrosoftService' as a device type
- * ------------------------------------------------------
- * DEPLOYMENT:
- * 1. Sheet > Extensions > Apps Script > replace Code.gs content with this file > Save.
- * 2. Deploy > Manage deployments > Edit (pencil) > Version: "New version" > Deploy.
- *    The Web app URL does not change.
+ * SRU Infrastructure Inventory - Google Sheets backend (v3.0)
+ * ------------------------------------------------------------
+ * SETUP:
+ * 1. Open (or create) the Google Sheet you want to use as the database.
+ * 2. Extensions > Apps Script.
+ * 3. Delete any starter code, paste this whole file in, and save.
+ * 4. Deploy > New deployment > Select type: Web app.
+ *      - Description: v3.0
+ *      - Execute as: Me
+ *      - Who has access: Anyone (or "Anyone within [domain]" once access
+ *        restriction is enabled)
+ * 5. Click Deploy, authorize the permissions when prompted.
+ * 6. Copy the "Web app URL" - it must match the sheetUrl used by the HTML page.
+ *
+ * IMPORTANT - if you already have a deployment from an older version:
+ * you must re-deploy (Manage deployments > Edit > Version: New version > Deploy),
+ * a plain "Save" of this file does NOT push the change to the live /exec URL.
+ *
+ * One sheet tab is created automatically per device type (see TYPES below),
+ * plus a "Suppliers" tab (supplier contact info, reused across devices) and
+ * an optional "Config" tab (custom type labels/extra fields - safe to leave empty,
+ * the HTML page already has built-in defaults for every type below).
+ *
+ * SCHEMA SAFETY: every read/write goes through headerMap() and looks columns
+ * up BY NAME, never by fixed position. This means:
+ *   - column order in the sheet can never silently misalign a record
+ *     (the historical bug this rewrite fixes for good), and
+ *   - adding a new column in the future is safe as long as it's added to
+ *     HEADERS below; ensureHeaders() will backfill it onto existing sheets
+ *     without touching already-saved data.
  */
 
-const TYPES = ['PC','Laptop','Screen','Printer','DesktopPrinter','PolycomVC','SmartProjector','Projector','LHD','MRS','CoreSwitch','DistributionSwitch','Routers','LoadBalancers','Switch','UPS','Scanner','Accessories','ScreenVertical','MicrosoftService','HallScreenHuawei','HallScreenBenq','CiscoPhone','WirelessCiscoPhone','NetworkReceivers','Firewall','LargeScreens','Other'];
-const HEADERS = ['ID','Tag','Brand','Model','Serial','Supplier','Specs','Location','User','Status','Date','Notes','Warranty','WarrantyExpiry','UpdatedAt','AddedBy','PhotoUrl'];
-// اسم مجلد Google Drive الذي تُحفظ فيه صور الأجهزة (يُنشأ تلقائيًا في Drive الخاص بحساب تشغيل السكربت إن لم يكن موجودًا)
-const PHOTOS_FOLDER_NAME = 'SRU Infrastructure Inventory - Photos';
+const TYPES = [
+  'PC','Laptop','Screen','Printer','DesktopPrinter','PolycomVC','SmartProjector','Projector',
+  'LHD','MRS','CoreSwitch','DistributionSwitch','Routers','LoadBalancers','Switch','UPS','Scanner',
+  'Accessories','ScreenVertical','MicrosoftService','NetworkReceivers','Firewall','LargeScreens',
+  'HallScreenHuawei','HallScreenBenq','CiscoPhone','WirelessCiscoPhone','Other'
+];
+
+// AddedBy and PhotoUrl were added after the original launch - kept at the very
+// end on purpose so older sheets/rows never shift when they're backfilled in.
+const HEADERS = [
+  'ID','Tag','Brand','Model','Serial','Supplier','Specs','Location','User','Status',
+  'Date','Notes','Warranty','WarrantyExpiry','UpdatedAt','AddedBy','PhotoUrl'
+];
 const SUPPLIER_HEADERS = ['SupplierName','ContactName','Email','Phone','UpdatedAt'];
+const CONFIG_HEADERS = ['typeKey','typeLabel','extra1Label','extra2Label'];
+const PHOTOS_FOLDER_NAME = 'SRU Infrastructure Inventory - Photos';
 
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const result = {};
-  TYPES.forEach(function(t) {
+  TYPES.forEach(function (t) {
     const sheet = ss.getSheetByName(t);
     result[t] = sheet ? readSheet(sheet) : [];
   });
-  return jsonResponse({ success: true, data: result, suppliers: readSuppliers(ss) });
+  return jsonResponse({ success: true, data: result, suppliers: readSuppliers(ss), config: readConfig(ss) });
 }
 
 function doPost(e) {
@@ -35,22 +69,55 @@ function doPost(e) {
       return jsonResponse({ success: false, error: 'Unknown device type: ' + type });
     }
     const sheet = getOrCreateSheet(ss, type);
+    const hMap = headerMap(sheet);
 
-    if (action === 'add') {
+    if (action === 'add' || action === 'update') {
       const r = payload.record;
-      r.photoUrl = savePhotoIfProvided(r);
-      sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy, r.photoUrl || '']);
-      upsertSupplier(ss, r.supplier, r.supplierContactName, r.supplierEmail, r.supplierPhone);
 
-    } else if (action === 'update') {
-      const r = payload.record;
-      r.photoUrl = savePhotoIfProvided(r);
-      const rowIndex = findRowById(sheet, r.id);
-      if (rowIndex > -1) {
-        sheet.getRange(rowIndex, 1, 1, HEADERS.length).setValues([[r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy, r.photoUrl || '']]);
-      } else {
-        sheet.appendRow([r.id, r.tag, r.brand, r.model, r.serial, r.supplier, JSON.stringify(r.specs || {}), r.location, r.user, r.status, r.date, r.notes, r.warranty, r.warrantyExpiry, new Date().toISOString(), r.addedBy, r.photoUrl || '']);
+      // Defensive server-side validation, mirroring the page's own check.
+      // This is what actually stops a half-empty record from ever being
+      // written - even if something upstream ever sends one, the row that
+      // was already saved is left untouched instead of being blanked out.
+      if (!r || !String(r.tag || '').trim() || !String(r.location || '').trim() || !type) {
+        return jsonResponse({ success: false, error: 'رقم الأصل والموقع ونوع الجهاز مطلوبة.' });
       }
+
+      // Resolve the photo separately from the row write: if the Drive upload
+      // fails for any reason, the device's actual data must still be saved.
+      let photoUrl = r.photoUrl || '';
+      if (r.photoBase64) {
+        try {
+          const uploaded = savePhotoIfProvided(r.photoBase64, r.photoMime, r.photoName);
+          if (uploaded) photoUrl = uploaded;
+        } catch (photoErr) {
+          photoUrl = r.photoUrl || '';
+        }
+      }
+
+      let rowIndex = (action === 'update') ? findRowById(sheet, r.id) : -1;
+      if (rowIndex === -1) {
+        sheet.appendRow(new Array(HEADERS.length));
+        rowIndex = sheet.getLastRow();
+      }
+      writeRecord(sheet, hMap, rowIndex, {
+        ID: r.id,
+        Tag: r.tag,
+        Brand: r.brand,
+        Model: r.model,
+        Serial: r.serial,
+        Supplier: r.supplier,
+        Specs: JSON.stringify(r.specs || {}),
+        Location: r.location,
+        User: r.user,
+        Status: r.status,
+        Date: r.date,
+        Notes: r.notes,
+        Warranty: r.warranty,
+        WarrantyExpiry: r.warrantyExpiry,
+        UpdatedAt: new Date().toISOString(),
+        AddedBy: r.addedBy || '',
+        PhotoUrl: photoUrl
+      });
       upsertSupplier(ss, r.supplier, r.supplierContactName, r.supplierEmail, r.supplierPhone);
 
     } else if (action === 'delete') {
@@ -67,6 +134,8 @@ function doPost(e) {
   }
 }
 
+// ---- sheet + header helpers (name-based, position-safe) ----
+
 function getOrCreateSheet(ss, type) {
   let sheet = ss.getSheetByName(type);
   if (!sheet) {
@@ -74,34 +143,78 @@ function getOrCreateSheet(ss, type) {
     sheet.appendRow(HEADERS);
     sheet.setFrozenRows(1);
   } else {
-    // إن كانت الورقة قديمة وتنقصها أعمدة (AddedBy و/أو PhotoUrl)، نضيفها في نهاية الصف الأول فقط دون أي إزاحة للبيانات الحالية
-    const lastCol = sheet.getLastColumn();
-    for (var i = lastCol; i < HEADERS.length; i++) {
-      sheet.getRange(1, i + 1).setValue(HEADERS[i]);
-    }
+    ensureHeaders(sheet);
   }
   return sheet;
 }
 
+// Adds any header from HEADERS that's missing from an existing sheet's first
+// row, appending it as a NEW column at the end - never reorders or removes
+// an existing header, so already-saved data is never shifted.
+function ensureHeaders(sheet) {
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const existing = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  const missing = HEADERS.filter(function (h) { return existing.indexOf(h) === -1; });
+  if (missing.length) {
+    sheet.getRange(1, lastCol + 1, 1, missing.length).setValues([missing]);
+  }
+}
+
+function headerMap(sheet) {
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const row = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const map = {};
+  row.forEach(function (h, i) { if (h) map[String(h)] = i + 1; }); // 1-based column index
+  return map;
+}
+
+// Writes a {HeaderName: value} object into one row, by header name.
+// Any header in HEADERS not present on this sheet yet is added first.
+function writeRecord(sheet, hMap, rowIndex, dataByHeader) {
+  Object.keys(dataByHeader).forEach(function (key) {
+    if (!hMap[key]) {
+      const newCol = sheet.getLastColumn() + 1;
+      sheet.getRange(1, newCol).setValue(key);
+      hMap[key] = newCol;
+    }
+    sheet.getRange(rowIndex, hMap[key]).setValue(dataByHeader[key]);
+  });
+}
+
 function readSheet(sheet) {
+  const hMap = headerMap(sheet);
   const values = sheet.getDataRange().getValues();
   if (values.length < 2) return [];
+  const col = function (name) { return hMap[name] ? hMap[name] - 1 : -1; };
+  const idCol = col('ID');
   return values.slice(1)
-    .filter(function(r) { return r[0]; })
-    .map(function(r) {
+    .filter(function (r) { return idCol > -1 && r[idCol]; })
+    .map(function (r) {
+      const get = function (name) { const i = col(name); return i > -1 ? r[i] : ''; };
+      const dateVal = get('Date');
+      const warrExpVal = get('WarrantyExpiry');
       return {
-        id: r[0], tag: r[1], brand: r[2], model: r[3], serial: r[4],
-        supplier: r[5],
-        specs: safeParse(r[6]), location: r[7], user: r[8], status: r[9],
-        date: r[10] instanceof Date ? Utilities.formatDate(r[10], Session.getScriptTimeZone(), 'yyyy-MM-dd') : r[10],
-        notes: r[11],
-        warranty: r[12],
-        warrantyExpiry: r[13] instanceof Date ? Utilities.formatDate(r[13], Session.getScriptTimeZone(), 'yyyy-MM-dd') : r[13],
-        addedBy: r[15],
-        photoUrl: r[16]
+        id: get('ID'),
+        tag: get('Tag'),
+        brand: get('Brand'),
+        model: get('Model'),
+        serial: get('Serial'),
+        supplier: get('Supplier'),
+        specs: safeParse(get('Specs')),
+        location: get('Location'),
+        user: get('User'),
+        status: get('Status'),
+        date: dateVal instanceof Date ? Utilities.formatDate(dateVal, Session.getScriptTimeZone(), 'yyyy-MM-dd') : dateVal,
+        notes: get('Notes'),
+        warranty: get('Warranty'),
+        warrantyExpiry: warrExpVal instanceof Date ? Utilities.formatDate(warrExpVal, Session.getScriptTimeZone(), 'yyyy-MM-dd') : warrExpVal,
+        addedBy: get('AddedBy'),
+        photoUrl: get('PhotoUrl')
       };
     });
 }
+
+// ---- suppliers ----
 
 function getOrCreateSuppliersSheet(ss) {
   let sheet = ss.getSheetByName('Suppliers');
@@ -118,12 +231,16 @@ function readSuppliers(ss) {
   const values = sheet.getDataRange().getValues();
   if (values.length < 2) return [];
   return values.slice(1)
-    .filter(function(r) { return r[0]; })
-    .map(function(r) {
+    .filter(function (r) { return r[0]; })
+    .map(function (r) {
       return { name: r[0], contactName: r[1], email: r[2], phone: r[3] };
     });
 }
 
+// Records a supplier's contact details once; if the supplier already exists,
+// only overwrites fields that were actually provided (non-empty), so entering
+// the same supplier name on another device without contact info won't erase
+// what's already on file - it just reuses it.
 function upsertSupplier(ss, name, contactName, email, phone) {
   if (!name) return;
   const sheet = getOrCreateSuppliersSheet(ss);
@@ -149,32 +266,48 @@ function upsertSupplier(ss, name, contactName, email, phone) {
   }
 }
 
-// يرفع صورة الجهاز (إن أُرسلت كـ base64 من الصفحة) إلى مجلد Drive المخصص، ويعيد رابط العرض.
-// إن لم تُرسل صورة جديدة، يعيد الرابط الحالي كما هو (بلا تعديل) للحفاظ على الصورة السابقة عند التعديل.
-function savePhotoIfProvided(r) {
-  if (!r.photoBase64) return r.photoUrl || '';
-  try {
-    const folder = getOrCreatePhotosFolder();
-    const bytes = Utilities.base64Decode(r.photoBase64);
-    const blob = Utilities.newBlob(bytes, r.photoMime || 'image/jpeg', r.photoName || (r.tag + '.jpg'));
-    const file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    // رابط عرض مباشر يصلح للاستخدام داخل <img>
-    return 'https://drive.google.com/uc?export=view&id=' + file.getId();
-  } catch (err) {
-    // في حال فشل الرفع (صلاحيات Drive غير مُفعّلة مثلاً)، لا نوقف حفظ بيانات الجهاز
-    return r.photoUrl || '';
-  }
+// ---- optional per-type config (custom labels) - safe to leave empty ----
+
+function readConfig(ss) {
+  const sheet = ss.getSheetByName('Config');
+  if (!sheet) return [];
+  const values = sheet.getDataRange().getValues();
+  if (values.length < 2) return [];
+  return values.slice(1)
+    .filter(function (r) { return r[0]; })
+    .map(function (r) {
+      return { typeKey: r[0], typeLabel: r[1], extra1Label: r[2], extra2Label: r[3] };
+    });
 }
 
+// ---- device photo upload ----
+
 function getOrCreatePhotosFolder() {
-  const folders = DriveApp.getFoldersByName(PHOTOS_FOLDER_NAME);
-  if (folders.hasNext()) return folders.next();
+  const it = DriveApp.getFoldersByName(PHOTOS_FOLDER_NAME);
+  if (it.hasNext()) return it.next();
   return DriveApp.createFolder(PHOTOS_FOLDER_NAME);
 }
 
+// Saves a base64-encoded image to Drive and returns a URL that renders
+// reliably inline in an <img> tag (drive.google.com/uc?export=view does NOT
+// render reliably when hotlinked - always use the /thumbnail endpoint).
+function savePhotoIfProvided(base64, mime, name) {
+  if (!base64) return '';
+  const folder = getOrCreatePhotosFolder();
+  const bytes = Utilities.base64Decode(base64);
+  const blob = Utilities.newBlob(bytes, mime || 'image/jpeg', name || ('photo_' + Date.now() + '.jpg'));
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1000';
+}
+
+// ---- misc ----
+
 function findRowById(sheet, id) {
-  const values = sheet.getDataRange().getValues();
+  const hMap = headerMap(sheet);
+  const idCol = hMap['ID'];
+  if (!idCol) return -1;
+  const values = sheet.getRange(1, idCol, sheet.getLastRow(), 1).getValues();
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][0]) === String(id)) return i + 1;
   }
