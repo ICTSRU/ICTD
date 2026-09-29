@@ -69,7 +69,6 @@ function doPost(e) {
       return jsonResponse({ success: false, error: 'Unknown device type: ' + type });
     }
     const sheet = getOrCreateSheet(ss, type);
-    const hMap = headerMap(sheet);
 
     if (action === 'add' || action === 'update') {
       const r = payload.record;
@@ -94,12 +93,8 @@ function doPost(e) {
         }
       }
 
-      let rowIndex = (action === 'update') ? findRowById(sheet, r.id) : -1;
-      if (rowIndex === -1) {
-        sheet.appendRow(new Array(HEADERS.length));
-        rowIndex = sheet.getLastRow();
-      }
-      writeRecord(sheet, hMap, rowIndex, {
+      const existingRowIndex = (action === 'update') ? findRowById(sheet, r.id) : -1;
+      const savedRowIndex = writeRecord(sheet, existingRowIndex, {
         ID: r.id,
         Tag: r.tag,
         Brand: r.brand,
@@ -119,10 +114,21 @@ function doPost(e) {
         PhotoUrl: photoUrl
       });
       upsertSupplier(ss, r.supplier, r.supplierContactName, r.supplierEmail, r.supplierPhone);
+      SpreadsheetApp.flush();
+
+      // Read the row straight back and confirm the ID actually landed where
+      // we expect. This is the safety net for the "saved but not really
+      // added" failure mode: if this check ever fails, the client is told
+      // explicitly instead of getting a false "success".
+      const verifyId = sheet.getRange(savedRowIndex, headerMap(sheet)['ID']).getValue();
+      if (String(verifyId) !== String(r.id)) {
+        return jsonResponse({ success: false, error: 'تعذر التحقق من حفظ السجل في الشيت (Row ' + savedRowIndex + ').' });
+      }
 
     } else if (action === 'delete') {
       const rowIndex = findRowById(sheet, payload.id);
       if (rowIndex > -1) sheet.deleteRow(rowIndex);
+      SpreadsheetApp.flush();
 
     } else {
       return jsonResponse({ success: false, error: 'Unknown action: ' + action });
@@ -168,17 +174,34 @@ function headerMap(sheet) {
   return map;
 }
 
-// Writes a {HeaderName: value} object into one row, by header name.
-// Any header in HEADERS not present on this sheet yet is added first.
-function writeRecord(sheet, hMap, rowIndex, dataByHeader) {
+// Writes a {HeaderName: value} object into one row, by header name, in a
+// SINGLE getRange/setValues call. Returns the row index actually written to.
+//
+// Deliberately avoids the previous "append an empty/holey row, then set each
+// cell one at a time" pattern: a sparse array (`new Array(n)`) handed to
+// Apps Script's Sheets bridge, and 17 separate setValue() calls per record,
+// are both unnecessary risk for zero benefit - one full, non-sparse array
+// written in one call is faster and behaves predictably every time.
+function writeRecord(sheet, existingRowIndex, dataByHeader) {
+  ensureHeaders(sheet); // make sure every header we're about to write actually exists
+  const hMap = headerMap(sheet);
+  const numCols = sheet.getLastColumn();
+
+  const rowIndex = (existingRowIndex > -1) ? existingRowIndex : (sheet.getLastRow() + 1);
+
+  // Start from the row's current values on update (so any column this call
+  // doesn't touch is preserved), or a real, fully-populated blank row on add.
+  let rowValues = (existingRowIndex > -1)
+    ? sheet.getRange(rowIndex, 1, 1, numCols).getValues()[0]
+    : new Array(numCols).fill('');
+
   Object.keys(dataByHeader).forEach(function (key) {
-    if (!hMap[key]) {
-      const newCol = sheet.getLastColumn() + 1;
-      sheet.getRange(1, newCol).setValue(key);
-      hMap[key] = newCol;
-    }
-    sheet.getRange(rowIndex, hMap[key]).setValue(dataByHeader[key]);
+    const col = hMap[key];
+    if (col) rowValues[col - 1] = dataByHeader[key];
   });
+
+  sheet.getRange(rowIndex, 1, 1, numCols).setValues([rowValues]);
+  return rowIndex;
 }
 
 function readSheet(sheet) {

@@ -413,7 +413,7 @@
 <script>
 const URL_KEY = 'sru_infra_sheet_url';
 
-const APP_VERSION = 'v3.2'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
+const APP_VERSION = 'v3.3'; // مصدر رقم الإصدار الوحيد — يُعرض في الشارة والعنوان وأسماء ملفات التصدير
 let TYPE_LABELS = {
   PC:'حاسب مكتبي', Laptop:'حاسب محمول', Screen:'شاشة', Printer:'طابعة مركزية', DesktopPrinter:'طابعة مكتبية',
   PolycomVC:'Polycom VC', SmartProjector:'Smart Projector', Projector:'Projector',
@@ -627,7 +627,11 @@ async function apiList(){
   if(!sheetUrl) return;
   setSync('busy','جارٍ التحميل من جوجل شيت...');
   try{
-    const res = await fetch(sheetUrl, {method:'GET'});
+    // منع المتصفح من تخديم نسخة مخبأة (cache) لهذا الرابط: بدون هذا، قد يُظهر
+    // المتصفح بيانات قديمة بعد الحفظ مباشرة (مثال: تغيير الحالة يظهر "تم
+    // الحفظ" لكن القائمة/الشيت المعروض لا يعكس القيمة الجديدة فورًا).
+    const noCacheUrl = sheetUrl + (sheetUrl.indexOf('?') > -1 ? '&' : '?') + '_ts=' + Date.now();
+    const res = await fetch(noCacheUrl, {method:'GET', cache:'no-store'});
     const json = await res.json();
     if(!json.success) throw new Error(json.error || 'فشل التحميل');
     devices = [];
