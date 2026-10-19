@@ -62,9 +62,16 @@ function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
     const action = payload.action;
-    const type = payload.type;
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
+    // Maintenance actions that scan across ALL type sheets at once, so they
+    // run before the per-type dispatch below (they have no single "type").
+    if (action === 'repairDuplicateIds') {
+      const fixes = repairDuplicateIds(ss);
+      return jsonResponse({ success: true, fixed: fixes, count: fixes.length });
+    }
+
+    const type = payload.type;
     if (TYPES.indexOf(type) === -1) {
       return jsonResponse({ success: false, error: 'Unknown device type: ' + type });
     }
@@ -324,7 +331,80 @@ function savePhotoIfProvided(base64, mime, name) {
   return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1000';
 }
 
-// ---- misc ----
+// ---- duplicate-ID scan & repair ----
+//
+// Root cause this guards against: a device row copy-pasted in the sheet
+// (to quickly create a similar device) carries over the ORIGINAL row's ID
+// column along with it. Both rows then look fine individually, but the
+// "تعديل" button on EITHER one resolves to whichever row the frontend's
+// devices.find(x=>x.id===id) hits first - always the same one, silently
+// shadowing the other device's edits. This scans every type sheet, finds
+// any ID value that appears more than once anywhere across the whole
+// workbook, and assigns a fresh, unique ID to every occurrence after the
+// first - never touching any other column, so no device data is altered.
+function repairDuplicateIds(ss) {
+  const sheetsByType = {};
+  const occurrencesById = {}; // id -> [{type, row, tag}, ...]
+
+  TYPES.forEach(function (t) {
+    const sheet = ss.getSheetByName(t);
+    if (!sheet) return;
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return;
+    sheetsByType[t] = sheet;
+
+    const hMap = headerMap(sheet);
+    const idCol = hMap['ID'];
+    if (!idCol) return;
+    const tagCol = hMap['Tag'];
+
+    const idVals = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
+    const tagVals = tagCol ? sheet.getRange(2, tagCol, lastRow - 1, 1).getValues() : null;
+
+    for (let i = 0; i < idVals.length; i++) {
+      const idVal = String(idVals[i][0] || '').trim();
+      if (!idVal) continue; // blank rows are not a duplicate-ID concern
+      const rowIndex = i + 2;
+      const tagVal = tagVals ? String(tagVals[i][0] || '') : '';
+      if (!occurrencesById[idVal]) occurrencesById[idVal] = [];
+      occurrencesById[idVal].push({ type: t, row: rowIndex, tag: tagVal });
+    }
+  });
+
+  // Every ID already in use anywhere, so freshly-generated replacement IDs
+  // can never collide with an existing one either.
+  const idsInUse = {};
+  Object.keys(occurrencesById).forEach(function (id) { idsInUse[id] = true; });
+
+  function makeUniqueId() {
+    let id;
+    do {
+      id = 'd' + Date.now() + Math.random().toString(16).slice(2, 8);
+    } while (idsInUse[id]);
+    idsInUse[id] = true;
+    return id;
+  }
+
+  const fixes = [];
+  Object.keys(occurrencesById).forEach(function (id) {
+    const occurrences = occurrencesById[id];
+    if (occurrences.length < 2) return;
+    // Keep the first occurrence exactly as it is (so it keeps being the
+    // record every past reference to this ID actually meant); only the
+    // later duplicate(s) get a new ID.
+    for (let i = 1; i < occurrences.length; i++) {
+      const occ = occurrences[i];
+      const sheet = sheetsByType[occ.type];
+      const idCol = headerMap(sheet)['ID'];
+      const newId = makeUniqueId();
+      sheet.getRange(occ.row, idCol).setValue(newId);
+      fixes.push({ type: occ.type, row: occ.row, tag: occ.tag, oldId: id, newId: newId });
+    }
+  });
+
+  if (fixes.length) SpreadsheetApp.flush();
+  return fixes;
+}
 
 function findRowById(sheet, id) {
   const hMap = headerMap(sheet);
